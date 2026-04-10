@@ -1,0 +1,24 @@
+[project]
+name = "universal-transaction-gateway"
+version = "1.0.0"
+description = "GaaS (Gateway as a Service) for secure agent transactions"
+dependencies = [
+    "mcp",
+    "camoufox[geoip]",
+    "playwright",
+    "capsolver",
+    "pydantic",
+    "python-dotenv",
+    "web3",
+    "cryptography",
+    "fpdf2"
+]
+
+[project.scripts]
+utg-server = "gateway.server:main"
+utg-approver = "gateway.utils.cli_approver:main"
+utg-setup = "utg_setup:main"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
