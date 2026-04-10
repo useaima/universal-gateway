@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+build/
+dist/
+*.egg-info/
+
+# GaaS Specific
+.env
+artifacts/gateway_v*.key
+artifacts/logs/*.db
+artifacts/logs/*.jsonl
+artifacts/logs/*.pdf
+artifacts/logs/*.json
+
+# Playwright/Camoufox
+.camoufox/
+.playwright/
+downloads/
+screenshots/
