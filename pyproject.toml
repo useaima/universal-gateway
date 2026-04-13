@@ -18,6 +18,7 @@ dependencies = [
 utg-server = "gateway.server:main"
 utg-approver = "gateway.utils.cli_approver:main"
 utg-setup = "utg_setup:main"
+utg-onboard = "gateway.utils.onboarding_wizard:main"
 
 [build-system]
 requires = ["setuptools", "wheel"]
