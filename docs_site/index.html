@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UTG GaaS | The Official Documentation</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="dark-mode">
+    <div class="glass-bg"></div>
+    
+    <aside class="sidebar">
+        <div class="logo">
+            <span class="logo-icon">🏦</span>
+            <h1>UTG GaaS</h1>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="#intro" class="active">Introduction</a></li>
+                <li><a href="#installation">Installation</a></li>
+                <li><a href="#onboarding">Onboarding Wizard</a></li>
+                <li><a href="#agent-setup">OpenClaw Setup</a></li>
+                <li><a href="#security">Security & Reliability</a></li>
+                <li><a href="#api">Tool Reference</a></li>
+                <li><a href="#legal">Legal & Compliance</a></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <a href="https://github.com/Alvins-mukabane/universal-gateway" target="_blank" class="btn-github">
+                GitHub Support
+            </a>
+        </div>
+    </aside>
+
+    <main class="content-area">
+        <header class="topbar">
+            <div class="os-selector">
+                <button class="os-btn active" data-os="windows">Windows</button>
+                <button class="os-btn" data-os="mac">macOS</button>
+                <button class="os-btn" data-os="linux">Linux</button>
+            </div>
+            <div class="search-bar">
+                <input type="text" placeholder="Search documentation...">
+            </div>
+        </header>
+
+        <section id="intro" class="doc-section">
+            <h1 class="premium-title">The M-Pesa for AI Agents</h1>
+            <p class="lead-text">Universal Transaction Gateway (UTG) is high-fidelity financial infrastructure that allows AI agents to interact with the real world securely, legally, and reliably.</p>
+            
+            <div class="cta-group">
+                <a href="https://github.com/Alvins-mukabane/universal-gateway/archive/refs/heads/main.zip" class="btn-primary">Download v1.0.0 (ZIP)</a>
+                <a href="#installation" class="btn-secondary">View Installation Guide</a>
+            </div>
+        </section>
+
+        <section id="installation" class="doc-section">
+            <h2>1. Installation</h2>
+            <p>Ensure you have Python 3.10+ installed. Use the tabs below for your platform's specific commands.</p>
+            
+            <div class="code-container">
+                <div class="code-tab windows visible">
+                    <div class="code-header"><span>PowerShell</span><button class="copy-btn">Copy</button></div>
+                    <pre><code># Install the Gateway as a global tool
+pip install .
+
+# If Scripts folder isn't on PATH, use:
+python -m pip install .</code></pre>
+                </div>
+                
+                <div class="code-tab mac">
+                    <div class="code-header"><span>Terminal (Homebrew)</span><button class="copy-btn">Copy</button></div>
+                    <pre><code># Install via Pip (Recommended)
+pip3 install .
+
+# Ensure Playwright dependencies are met
+npx playwright install firefox</code></pre>
+                </div>
+
+                <div class="code-tab linux">
+                    <div class="code-header"><span>Bash</span><button class="copy-btn">Copy</button></div>
+                    <pre><code># Install UTG
+pip install .
+
+# Setup Playwright Binaries
+npx playwright install-deps
+npx playwright install firefox</code></pre>
+                </div>
+            </div>
+        </section>
+
+        <section id="onboarding" class="doc-section">
+            <h2>2. The Onboarding Wizard</h2>
+            <p>No coding required! Run our interactive setup to generate your secure Identity Keys and configuration.</p>
+            <div class="code-container">
+                <div class="code-header"><span>Terminal</span><button class="copy-btn">Copy</button></div>
+                <pre><code>utg-onboard</code></pre>
+            </div>
+            <p class="note"><span>NOTE:</span> If the command isn't found, use <code>python src/gateway/utils/onboarding_wizard.py</code></p>
+        </section>
+
+        <section id="agent-setup" class="doc-section">
+            <h2>3. Connecting to OpenClaw</h2>
+            <p>Paste this configuration into your OpenClaw <code>mcpServers</code> settings. The onboarding wizard will generate your exact absolute path.</p>
+            <div class="code-container">
+                <div class="code-header"><span>JSON</span><button class="copy-btn">Copy</button></div>
+                <pre><code>"mcpServers": {
+  "utg-gateway": {
+    "command": "python",
+    "args": ["/path/to/your/universal-gateway/src/gateway/server.py"]
+  }
+}</code></pre>
+            </div>
+        </section>
+
+        <footer class="content-footer">
+            <p>&copy; 2026 Alvins Mukabane. Built for the future of Agentic Commerce.</p>
+        </footer>
+    </main>
+
+    <script src="main.js"></script>
+</body>
+</html>
