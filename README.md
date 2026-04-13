@@ -1,29 +1,49 @@
-# Universal Transaction Gateway (UTG)
+# 🏦 UTG GaaS: Universal Transaction Gateway
+**The M-Pesa for AI Agents & OpenClaw.**
 
-**The Gateway as a Service (GaaS) for the Agent-to-Agent (A2A) Economy.**
-
-UTG is a secure, modular, and legally verifiable transaction bridge designed for AI agents like **OpenClaw** and **Claude**. It enables agents to browse, negotiate, and execute transactions on Ethereum and E-commerce platforms while keeping a human in the loop for safety.
-
-## 🌟 Key Features
-
-- **🛡️ Defensive Execution**: A "Safety-First" wrapper with price-variance guards and anti-loop protocols.
-- **🏦 Legal Vault**: Cryptographically signed audit logs (Ed25519) with PDF/JSON bank statement exports.
-- **🌉 DeFi Sandbox**: Ethereum transaction simulation via Tenderly to prevent wallet draining.
-- **🤝 Dual-Consent**: Multi-party approval logic (e.g. Alvins + Alicia must both sign).
-- **🦊 Stealth Browser**: Camoufox-powered stealth automation with human mimicking.
-- **💰 Revenue Engine**: Built-in M-Pesa style fee collection for agent-led commerce.
-
-## 🚀 Quick Start
-
-1. Install the Gateway:
-   ```bash
-   python utg_setup.py
-   ```
-2. Start the Service:
-   ```bash
-   utg-server
-   ```
-3. Read the [INSTALL.md](INSTALL.md) for full configuration details.
+UTG GaaS is a high-security, professional "Payments & Transaction Node" for AI agents. It allows agents like **Claude (OpenClaw)** to perform a secure checkout, DeFi trades, and signed business transactions with human-in-the-loop safety.
 
 ---
-*Created by Alvins for the future of Agent Commerce.*
+
+## 🚀 One-Click Onboarding
+We’ve built UTG GaaS for everyone—no coding required.
+
+1. **Install**:
+   ```bash
+   pip install .
+   ```
+2. **Setup**:
+   ```bash
+   utg-onboard
+   ```
+   *Follow the friendly wizard to set your passcode and generate your secure keys.*
+
+---
+
+## 🦀 OpenClaw Integration
+UTG GaaS is optimized for **OpenClaw**. 
+
+After running `utg-onboard`, copy the provided JSON snippet into your OpenClaw `mcpServers` configuration:
+
+```json
+"mcpServers": {
+  "utg-gateway": {
+    "command": "python",
+    "args": ["/path/to/src/gateway/server.py"]
+  }
+}
+```
+
+---
+
+## 🛡️ Reliability & Security
+- **Defense-First Execution**: Atomic state machine prevents double-purchasing.
+- **Legal Auditor**: Generates Ed25519-signed PDF statements for every transaction.
+- **Stealth Layer**: Local Camoufox or Cloud Browserbase support.
+- **Global Compliance**: Adheres to US E-SIGN and EU GDPR principles.
+
+## 🏛️ License
+This project is licensed under the **MIT License**.
+
+## 🆘 Support
+Find a bug? Open an issue on our [GitHub Issues](https://github.com/Alvins-mukabane/universal-gateway/issues) page.

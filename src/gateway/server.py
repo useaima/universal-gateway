@@ -1,114 +1,83 @@
-import asyncio
 import os
-import sys
-import importlib.util
+import asyncio
 from typing import List, Dict
-from dotenv import load_dotenv
-
-import mcp.types as types
-from mcp.server.models import InitializationOptions
+import mcp.server.stdio
 from mcp.server import Server, NotificationOptions
-from mcp.server.stdio import stdio_server
+from mcp.server.models import InitializationOptions
+import mcp.types as types
 
-# Adjust path to find core modules
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+from core.a2a_adapter import A2AAdapter
 from core.browser_manager import BrowserManager
-from core.audit_logger import AuditLogger
-from core.skill_base import SkillBase
 
-# Load .env relative to script
-script_dir = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(script_dir, '.env'))
-
-server = Server("universal-transaction-gateway")
-browser_manager = BrowserManager()
-audit_logger = AuditLogger()
-
-# Skill Registry
-skills: Dict[str, SkillBase] = {}
-
-def load_skills():
-    """Dynamically load all skill plugins from the skills/ directory."""
-    skills_dir = os.path.join(script_dir, "skills")
-    for filename in os.listdir(skills_dir):
-        if filename.endswith("_skill.py") and not filename.startswith("__"):
-            skill_name = filename[:-3]
-            module_path = os.path.join(skills_dir, filename)
-            
-            spec = importlib.util.spec_from_file_location(skill_name, module_path)
-            module = importlib.util.module_from_spec(spec)
-            spec.loader.exec_module(module)
-            
-            # Find the class that inherits from SkillBase
-            for attr_name in dir(module):
-                attr = getattr(module, attr_name)
-                if (isinstance(attr, type) and 
-                    issubclass(attr, SkillBase) and 
-                    attr is not SkillBase):
-                    skill_instance = attr()
-                    skills[skill_instance.name] = skill_instance
-                    print(f"Loaded Skill: {skill_instance.name}", file=sys.stderr)
-
-@server.list_tools()
-async def handle_list_tools() -> list[types.Tool]:
-    all_tools = []
-    # Core Tools
-    all_tools.append(types.Tool(
-        name="navigate",
-        description="Navigate safely to a specific URL.",
-        inputSchema={
-            "type": "object",
-            "properties": {"url": {"type": "string"}},
-            "required": ["url"]
-        }
-    ))
-    
-    # Load tools from each skill
-    for skill in skills.values():
-        skill_tools = await skill.get_tools()
-        all_tools.extend(skill_tools)
-        
-    return all_tools
-
-@server.call_tool()
-async def handle_call_tool(name: str, arguments: dict | None) -> list[types.TextContent]:
-    if arguments is None: arguments = {}
-    
-    # Core Tool Routing
-    if name == "navigate":
-        url = arguments.get("url")
-        await browser_manager.navigate(url)
-        audit_logger.log_action(name, arguments, "SUCCESS")
-        return [types.TextContent(type="text", text=f"Navigated to {url}")]
-
-    # Skill Routing
-    for skill in skills.values():
-        tools = await skill.get_tools()
-        if any(t.name == name for t in tools):
-            return await skill.handle_tool_call(name, arguments)
-            
-    raise ValueError(f"Unknown tool: {name}")
-
-async def main():
-    print("Starting Universal Transaction Gateway Service (GaaS Mode)...", file=sys.stderr, flush=True)
-    
-    # Initialize Core
-    load_skills()
-    await browser_manager.initialize()
-    
-    async with stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="universal-transaction-gateway",
-                server_version="1.0.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                )
-            )
+class UniversalGatewayServer:
+    def __init__(self):
+        self.server = Server("universal-gateway")
+        self.browser_manager = BrowserManager()
+        self.skills = {}
+        self.a2a = A2AAdapter(
+            agent_id="utg-gateway-001",
+            capabilities=["ecommerce", "defi", "legal_vault"]
         )
+        self._setup_handlers()
+
+    def _setup_handlers(self):
+        @self.server.list_tools()
+        async def handle_list_tools() -> List[types.Tool]:
+            all_tools = []
+            for skill in self.skills.values():
+                all_tools.extend(await skill.get_tools())
+            
+            # Add A2A Global Tools
+            all_tools.append(types.Tool(
+                name="get_a2a_agent_card",
+                description="Returns the official Google A2A Agent Card for this gateway.",
+                inputSchema={"type": "object"}
+            ))
+            return all_tools
+
+        @self.server.call_tool()
+        async def handle_call_tool(name: str, arguments: Dict | None) -> List[types.Content]:
+            if name == "get_a2a_agent_card":
+                card = self.a2a.get_agent_card()
+                return [types.TextContent(type="text", text=json.dumps(card, indent=2))]
+            
+            for skill in self.skills.values():
+                tools = await skill.get_tools()
+                if any(t.name == name for t in tools):
+                    return await skill.handle_tool_call(name, arguments or {})
+            
+            return [types.TextContent(type="text", text=f"Tool {name} not found.")]
+
+    def load_skills(self):
+        # In production, this would dynamically import from skills/
+        from skills.commerce_skill import CommerceSkill
+        from skills.defi_eth_skill import DeFiEthSkill
+        from skills.handover_skill import HandoverSkill
+        
+        self.skills["commerce"] = CommerceSkill()
+        self.skills["defi"] = DeFiEthSkill()
+        self.skills["handover"] = HandoverSkill()
+
+    async def run(self):
+        async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+            await self.server.run(
+                read_stream,
+                write_stream,
+                InitializationOptions(
+                    server_name="universal-gateway",
+                    server_version="1.0.0",
+                    capabilities=self.server.get_capabilities(
+                        notification_options=NotificationOptions(),
+                        experimental_capabilities={},
+                    ),
+                ),
+            )
+
+def main():
+    import json
+    server = UniversalGatewayServer()
+    server.load_skills()
+    asyncio.run(server.run())
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

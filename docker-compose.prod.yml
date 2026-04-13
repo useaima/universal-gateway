@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  gateway:
+    build: .
+    container_name: utg-gateway
+    restart: always
+    environment:
+      - BROWSER_MODE=browserbase
+      - BROWSERBASE_API_KEY=${BROWSERBASE_API_KEY}
+      - BROWSERBASE_PROJECT_ID=${BROWSERBASE_PROJECT_ID}
+      - CAPSOLVER_API_KEY=${CAPSOLVER_API_KEY}
+      - TENDERLY_API_KEY=${TENDERLY_API_KEY}
+      - ETHEREUM_RPC_URL=${ETHEREUM_RPC_URL}
+      - GATEWAY_PASSCODE=${GATEWAY_PASSCODE}
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./artifacts:/app/artifacts
+      - ./logs:/app/logs
+    ports:
+      - "8000:8000" # Reserved for Web Dashboard/A2A endpoints
+    command: python src/gateway/server.py
+
+  # SQLite is used directly within the gateway service for the Audit Vault
+  # but we can mount it to a DO Volume for persistence.
