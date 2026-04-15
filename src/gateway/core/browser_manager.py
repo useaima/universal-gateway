@@ -1,7 +1,14 @@
 import os
 import sys
+import asyncio
+import random
 from playwright.async_api import async_playwright
 from browserbase import Browserbase
+
+
+async def human_delay(min_s: float = 0.5, max_s: float = 1.5):
+    """Async sleep for a random duration to mimic human interaction timing."""
+    await asyncio.sleep(random.uniform(min_s, max_s))
 
 class BrowserManager:
     """

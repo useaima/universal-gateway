@@ -1,20 +1,31 @@
-# 🏦 UTG GaaS: Universal Transaction Gateway
-
-**The Gateway as a Service (GaaS) for the Agent-to-Agent (A2A) Economy.**
-
-UTG GaaS is a professional, high-security transaction node designed to bridge AI agents (like **Claude** and **OpenClaw**) to the real world. Under the hood, it combines official **Google AP2/A2A** protocols with a "Safety Sandwich" of defensive automation.
+UTG GaaS is a professional, high-security transaction node designed to bridge AI agents (like **Claude** and **OpenClaw**) to the real world. Powered by the **Eva Protocol Stack (v2.0)**, it implements the leading standards for agentic finance: **x402 (HTTP 402)**, **Durable Sagas (Durable Execution)**, and **Daraja 3.0 (M-Pesa)**.
 
 ---
 
-## 🛡️ Core Reliability Features
+## 🏛️ The Eva Protocol Stack (v2.0)
 
-### 1. The Execution State Machine
-Every task your agent performs follows a strict lifecycle to prevent "Double-Purchasing" or "Price Gouging":
-- **PREFLIGHT**: Verifies local environment and inventory.
-- **SIMULATE**: Dry-runs the transaction in a DeFi Sandbox.
-- **VALIDATE**: Scrapes the cart DOM 100ms before checkout to catch price jumps.
-- **EXECUTE**: Atomic execution with a strict time budget.
-- **VERIFY**: Confirms transaction finality and signs the legal receipt.
+### 1. The Idempotent Execution Engine
+We prioritize **Consistency (CP)** over Availability. Using industrial-grade `X-Idempotency-Keys`, the gateway ensures that even if an agent retries a transaction 100 times, the funds are only moved once. This prevents the "Double-Spend" catastrophe common in early agentic systems.
+
+### 2. x402: Payment-Required Handshake
+Aligned with the **Coinbase/Nevermined 2026 x402 Standard**, UTG GaaS handles "Paid API" walls automatically.
+- **Handshake**: Returns a 402 status when a resource requires payment.
+- **Resolution**: Allows the agent to solve the challenge by presenting a signed M-Pesa mandate.
+
+### 3. Durable Sagas (Temporal-Style Execution)
+Financial workflows are multi-step (e.g., M-Pesa Debit -> Swap -> Wallet Credit). UTG GaaS uses a **Durable Executor** to track every state change. If step 3 fails, the system automatically triggers **Compensating Actions** (Rollbacks) to ensure user funds are always reconciled.
+
+### 4. M-Pesa 3.0 Compliance
+Using the latest **Daraja 3.0 signatures**, we cryptographically verify every payment callback from Safaricom to prevent spoofing and unauthorized manual balance updates.
+
+---
+
+## ☁️ Cloudflare Hosting (The "Hybrid" Path)
+
+While the Gateway engine requires a Python environment for browser automation, we recommend a **Hybrid Cloud** setup for production:
+1. **Docs Site**: Host on **Vercel** or **Cloudflare Pages** for max performance.
+2. **Gateway API**: Host on a **DigitalOcean Droplet** or **Local Server**.
+3. **Connectivity**: Use a **Cloudflare Tunnel (`cloudflared`)** to expose your local gateway securely to the internet without opening any ports.
 
 ### 2. The Agent Vault (Legal Compliance)
 UTG GaaS generates **Ed25519-signed Legal Statements**. These exports (PDF and JSON) provide a non-repudiable history of what your agent did, how much it spent, and who approved it.

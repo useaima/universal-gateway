@@ -45,6 +45,15 @@ class AuditLogger:
             )
             conn.commit()
 
+    def log_action(self, tool_name: str, arguments: dict, result: str, user_id: str = "system"):
+        """Convenience method: logs a tool call as a signed entry."""
+        self.log_signed_entry(
+            user_id=user_id,
+            action=tool_name,
+            data={"arguments": arguments, "result": result},
+            status=result
+        )
+
     def export_agent_json(self, user_id: str) -> str:
         """Exports a signed JSON for an agent to read."""
         with sqlite3.connect(self.db_path) as conn:
