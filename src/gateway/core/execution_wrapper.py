@@ -5,6 +5,7 @@ import datetime
 from typing import Dict, Any, Callable, Awaitable
 from core.audit_logger import AuditLogger
 from core.identity_manager import IdentityManager
+from core.idempotency_manager import IdempotencyManager
 
 class PriceMismatchException(Exception):
     pass
@@ -22,6 +23,7 @@ class ExecutionWrapper:
         self.session_id = f"sess_{int(time.time())}"
         self.audit_logger = AuditLogger()
         self.identity = IdentityManager()
+        self.idempotency = IdempotencyManager()
         self.task_budget = 5 
         self.start_time = time.time()
         self.timeout = 120 
@@ -37,9 +39,17 @@ class ExecutionWrapper:
         if time.time() - self.start_time > self.timeout:
             return {"status": "FAILED", "error": f"Task Timeout (>{self.timeout}s passed)"}
 
-        # 3. Edge Case: Idempotency Guard (Prevent Double-Purchasing)
-        # We check the vault for any active or settled tasks with the same task_name in this session
-        self._check_idempotency(task_name)
+        # 3. Edge Case: Idempotency Guard (The Eva CP Path)
+        # Check if this task has already been successfully executed
+        id_key = f"{self.user_id}_{task_name}" # In prod, this would be passed as a param
+        memo = self.idempotency.check_key(id_key, self.user_id)
+        if memo and memo["status"] == "SUCCESS":
+            print(f"[Consistency] Key {id_key} already processed. Returning cached result.", file=sys.stderr)
+            return memo["response"]
+        
+        # Lock the key to indicate processing has started
+        if not memo:
+            self.idempotency.lock_key(id_key, self.user_id)
 
         # 4. LOG STATE: PREFLIGHT
         self._log_state(task_name, "PREFLIGHT", {"initial_quote": initial_quote})
@@ -56,9 +66,11 @@ class ExecutionWrapper:
             # Atomic Execution logic
             result = await asyncio.wait_for(step_fn(), timeout=max(0.1, remaining_time))
             
-            # 7. VERIFY
+            # 7. VERIFY & FINALIZE IDEMPOTENCY
             self._log_state(task_name, "VERIFY", {"result": str(result)})
-            return {"status": "SUCCESS", "result": result}
+            final_res = {"status": "SUCCESS", "result": result}
+            self.idempotency.finalize_key(id_key, self.user_id, "SUCCESS", final_res)
+            return final_res
 
         except asyncio.TimeoutError:
             self._log_state(task_name, "FAILED", {"error": "Execution Timeout"})
@@ -83,12 +95,27 @@ class ExecutionWrapper:
         # for this specific task_name and session_id.
         pass
 
-    async def _validate_final_price(self, initial_quote: float):
-        """Scrapes DOM for Final Total Price (Final-Look Validator)."""
-        await asyncio.sleep(0.5) 
-        final_price = initial_quote 
-        if final_price > initial_quote:
-            raise PriceMismatchException(f"Price increased from {initial_quote} to {final_price}")
+    async def _validate_final_price(self, initial_quote: float, scraped_price: float = None, tolerance: float = 0.05):
+        """Validates that the final scraped price matches the initial quote within tolerance.
+
+        Args:
+            initial_quote: The originally quoted price.
+            scraped_price: The price scraped from the page at checkout time.
+                          If None, validation is skipped (no price data available).
+            tolerance: Allowed variance as a fraction (default 5%).
+        """
+        if scraped_price is None:
+            return  # No scraped price to validate against
+
+        if initial_quote <= 0:
+            return  # Can't compute percentage delta on zero
+
+        delta = abs(scraped_price - initial_quote) / initial_quote
+        if delta > tolerance:
+            raise PriceMismatchException(
+                f"Price variance exceeded tolerance: scraped ${scraped_price:.2f} "
+                f"vs quoted ${initial_quote:.2f} (delta {delta:.1%} > {tolerance:.0%})"
+            )
 
     def _log_state(self, task: str, state: str, metadata: dict):
         """Writes signed, multi-format state entries to the Vault."""
