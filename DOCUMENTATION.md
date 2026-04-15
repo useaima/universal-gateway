@@ -20,12 +20,27 @@ Using the latest **Daraja 3.0 signatures**, we cryptographically verify every pa
 
 ---
 
-## ☁️ Cloudflare Hosting (The "Hybrid" Path)
+## ☁️ 100% Free Hosting (The Cloudflare Strategy)
 
-While the Gateway engine requires a Python environment for browser automation, we recommend a **Hybrid Cloud** setup for production:
-1. **Docs Site**: Host on **Vercel** or **Cloudflare Pages** for max performance.
-2. **Gateway API**: Host on a **DigitalOcean Droplet** or **Local Server**.
-3. **Connectivity**: Use a **Cloudflare Tunnel (`cloudflared`)** to expose your local gateway securely to the internet without opening any ports.
+Because this gateway requires a heavy Python environment with browser automation engines (Playwright), it cannot be hosted on serverless platforms like Cloudflare Workers or Vercel. 
+
+However, since your domain (`useaima.com`) is on Cloudflare, you can host the entire system **for free** using this architecture:
+
+### 1. The Documentation Site (Cloudflare Pages)
+Host the HTML/CSS documentation portal on the edge for free.
+- Go to Cloudflare Dashboard -> **Pages** -> Connect your GitHub repo.
+- Point it to the `docs_site` folder.
+- Assign the custom domain: `utg.useaima.com`.
+
+### 2. The Gateway Server (Localhost + Cloudflare Tunnels)
+Run the heavy Python server directly on your laptop (Free) and expose it securely to the world (so Safaricom M-Pesa webhooks and other agents can reach it).
+- **Start the Gateway locally:** `utg-server`
+- **Install Cloudflared:** Download the Cloudflare Tunnel daemon.
+- **Expose it:**
+  ```bash
+  cloudflared tunnel --url http://localhost:8080
+  ```
+- This gives you a secure `https://xxx.trycloudflare.com` link (or you can map it to `api.utg.useaima.com` in your dashboard). You never have to pay for a DigitalOcean server.
 
 ### 2. The Agent Vault (Legal Compliance)
 UTG GaaS generates **Ed25519-signed Legal Statements**. These exports (PDF and JSON) provide a non-repudiable history of what your agent did, how much it spent, and who approved it.

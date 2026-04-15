@@ -20,6 +20,7 @@
         <nav>
             <ul>
                 <li><a href="#intro" class="active">Introduction</a></li>
+                <li><a href="#cloudflare-hosting">Free Cloudflare Setup</a></li>
                 <li><a href="#installation">Installation</a></li>
                 <li><a href="#onboarding">Onboarding Wizard</a></li>
                 <li><a href="#agent-setup">OpenClaw Setup</a></li>
@@ -53,7 +54,27 @@
             
             <div class="cta-group">
                 <a href="https://github.com/Alvins-mukabane/universal-gateway/archive/refs/heads/main.zip" class="btn-primary">Download v1.0.0 (ZIP)</a>
-                <a href="#installation" class="btn-secondary">View Installation Guide</a>
+                <a href="#cloudflare-hosting" class="btn-secondary">View Cloudflare Free Hosting</a>
+            </div>
+        </section>
+
+        <section id="cloudflare-hosting" class="doc-section">
+            <h2>0. The 100% Free Cloudflare Setup</h2>
+            <p>Don't pay for expensive DigitalOcean servers. Because your domain is on Cloudflare, you can host the gateway infrastructure for <strong>$0/month</strong>.</p>
+            
+            <div class="feature-grid" style="margin-top: 20px;">
+                <div class="feature-card">
+                    <h3>1. Cloudflare Pages (The Website)</h3>
+                    <p>Go to your Cloudflare Dashboard -> Pages. Import this repository and set the Root Directory to <code>docs_site</code>. Point your custom domain (<code>utg.useaima.com</code>) to it.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>2. Your Laptop (The Server)</h3>
+                    <p>The gateway requires Python and Playwright. Run the server directly on your laptop using <code>utg-server</code>.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>3. Cloudflare Tunnels (The Bridge)</h3>
+                    <p>Use <code>cloudflared tunnel --url http://localhost:8080</code> to expose your laptop securely to the world (e.g., <code>api.utg.useaima.com</code>) without opening router ports.</p>
+                </div>
             </div>
         </section>
 
