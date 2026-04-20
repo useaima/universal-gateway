@@ -300,3 +300,13 @@ code {
     color: var(--accent-color);
     margin-right: 10px;
 }
+
+    /* --- NEW CLASSES FOR CODEX STYLE --- */
+    .nav-header { font-family: 'Outfit', sans-serif; font-size: 0.75rem; color: #666; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 1.5rem; margin-bottom: 0.5rem; padding-left: 1rem; }
+    .badge { display: inline-block; background: rgba(108, 92, 237, 0.2); color: #8c7bff; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-bottom: 1rem; border: 1px solid rgba(108, 92, 237, 0.3); }
+    .code-preview-block { margin-top: 2rem; background-color: #1a1a1a; border: 1px solid #333; border-radius: 8px; overflow: hidden; }
+    .code-preview-block .code-header { background-color: #222; padding: 0.8rem 1rem; font-size: 0.85rem; color: #888; border-bottom: 1px solid #333; font-family: monospace; }
+    .code-preview-block pre { margin: 0; padding: 1.5rem; font-size: 0.9rem; line-height: 1.5; color: #00ffcc; background: transparent; }
+    .feature-list li { margin-bottom: 1rem; line-height: 1.6; list-style-type: none; position: relative; padding-left: 1.5rem; }
+    .feature-list li::before { content: '►'; position: absolute; left: 0; color: #6c5ced; font-size: 0.8rem; top: 3px; }
+    
