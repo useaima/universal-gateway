@@ -18,20 +18,23 @@
             <h1>UTG GaaS</h1>
         </div>
         <nav>
-            <ul>
+            <ul class="nav-links">
+                <li class="nav-header">GETTING STARTED</li>
                 <li><a href="#intro" class="active">Introduction</a></li>
                 <li><a href="#cloudflare-hosting">Free Cloudflare Setup</a></li>
-                <li><a href="#installation">Installation</a></li>
                 <li><a href="#onboarding">Onboarding Wizard</a></li>
-                <li><a href="#agent-setup">OpenClaw Setup</a></li>
-                <li><a href="#security">Security & Reliability</a></li>
-                <li><a href="#api">Tool Reference</a></li>
+                <li class="nav-header">INTEGRATION</li>
+                <li><a href="#agent-setup">Connecting to OpenClaw</a></li>
+                <li><a href="#real-world">Real World Scenario</a></li>
+                <li class="nav-header">GOVERNANCE</li>
+                <li><a href="#security">Architecture & Security</a></li>
                 <li><a href="#legal">Legal & Compliance</a></li>
             </ul>
         </nav>
         <div class="sidebar-footer">
             <a href="https://github.com/Alvins-mukabane/universal-gateway" target="_blank" class="btn-github">
-                GitHub Support
+                <span>View on GitHub</span>
+                <span class="icon">↗</span>
             </a>
         </div>
     </aside>
@@ -49,12 +52,26 @@
         </header>
 
         <section id="intro" class="doc-section">
-            <h1 class="premium-title">The M-Pesa for AI Agents</h1>
-            <p class="lead-text">Universal Transaction Gateway (UTG) is high-fidelity financial infrastructure that allows AI agents to interact with the real world securely, legally, and reliably.</p>
+            <div class="badge">UTG GaaS 2026.4</div>
+            <h1 class="premium-title">The Programmable Financial Protocol</h1>
+            <p class="lead-text">Universal Transaction Gateway (UTG) is high-fidelity financial infrastructure that allows AI agents to interact with the real world securely, legally, and reliably without custodial risk.</p>
             
             <div class="cta-group">
-                <a href="https://github.com/Alvins-mukabane/universal-gateway/archive/refs/heads/main.zip" class="btn-primary">Download v1.0.0 (ZIP)</a>
-                <a href="#cloudflare-hosting" class="btn-secondary">View Cloudflare Free Hosting</a>
+                <a href="#onboarding" class="btn-primary">Start Onboarding Wizard</a>
+                <a href="#real-world" class="btn-secondary">View the Case Study</a>
+            </div>
+            
+            <div class="code-preview-block">
+                <div class="code-header">Agent Request via OpenClaw</div>
+                <pre><code>"Action": "defi_eth.request_eth_transfer_reliable"
+"Arguments": {
+  "to_address": "0xAb580...",
+  "amount_eth": 0.05
+}
+
+// ⬇️ GATEWAY RESPONSE
+"Status": 401: PENDING_HUMAN_SIGNATURE
+"Message": "Halted. Strict HITL Enforced. Ask user for their 6-digit PIN on Telegram."</code></pre>
             </div>
         </section>
 
@@ -124,21 +141,63 @@ npx playwright install firefox</code></pre>
         </section>
 
         <section id="agent-setup" class="doc-section">
-            <h2>3. Connecting to OpenClaw</h2>
-            <p>Paste this configuration into your OpenClaw <code>mcpServers</code> settings. The onboarding wizard will generate your exact absolute path.</p>
+            <h2>Connecting to OpenClaw</h2>
+            <p>Our completely revamped onboarding wizard automatically pushes the configuration to your OpenClaw JSON. But if you wish to see how it works under the hood (via WSL Bridge), here is the schema:</p>
             <div class="code-container">
-                <div class="code-header"><span>JSON</span><button class="copy-btn">Copy</button></div>
-                <pre><code>"mcpServers": {
-  "utg-gateway": {
-    "command": "python",
-    "args": ["/path/to/your/universal-gateway/src/gateway/server.py"]
+                <div class="code-header"><span>~/.openclaw/openclaw.json</span><button class="copy-btn">Copy</button></div>
+                <pre><code>"mcp": {
+  "servers": {
+    "utg-gateway": {
+      "command": "/mnt/c/.../python.exe",
+      "args": ["/mnt/c/.../src/gateway/server.py"]
+    }
   }
 }</code></pre>
             </div>
         </section>
 
+        <section id="real-world" class="doc-section">
+            <h2>🌍 Real World Case Study: Automated Investment Bot</h2>
+            <p>Imagine a full-stack financial application built to automate user budgets and investments.</p>
+            
+            <h3>The Problem</h3>
+            <p>If the application connects a user to a standard AI agent to "auto-invest" their capital, giving the AI raw access to private keys or commercial bank logins natively is catastrophically dangerous.</p>
+
+            <h3>The UTG Gateway Solution</h3>
+            <p>By placing <strong>UTG GaaS</strong> in the middle, any financial application becomes an Agentic Commerce superpower safely:</p>
+            <ul class="feature-list" style="margin-top: 15px; margin-bottom: 25px;">
+                <li><strong>1. The AI decides:</strong> The OpenClaw agent analyzes the target database and decides, "The user has $50 extra this month, let's execute an investment in ETH."</li>
+                <li><strong>2. The AI commands:</strong> The agent calls the MCP tool <code>request_eth_transfer_reliable</code>.</li>
+                <li><strong>3. The Gateway HALTS (Safety Sandwich):</strong> The Gateway physically cuts the execution. It messages the user directly on Telegram/Slack: <em>"Your automated assistant wants to invest $50. Reply with your 6-digit PIN to approve."</em></li>
+                <li><strong>4. Non-Custodial Execution:</strong> The user replies "123456". The agent relays this to the Gateway via <code>submit_signature_share</code>. The Gateway verifies the PIN cryptographically and processes the transaction itself using its secured local vault.</li>
+            </ul>
+        </section>
+
+        <section id="legal" class="doc-section">
+            <h2>⚖️ Legal, Privacy, and Compliance</h2>
+            <p>Enterprise protocols require enterprise governance. The UTG Gateway natively complies with strict regulatory frameworks.</p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h3>EU GDPR Compliance (Data Residency)</h3>
+                    <p>All transactional data, logs, and cryptographic traces are stored locally in the Agent Vault (SQLite). <strong>No data is sent to external or custodial servers</strong>, guaranteeing perfect adherence to EU data residency laws.</p>
+                </div>
+                <div class="feature-card">
+                    <h3>US E-SIGN ACT (Non-Repudiation)</h3>
+                    <p>Every executed transaction generates a cryptographic, immutable PDF receipt using Ed25519 signatures. During onboarding, users explicitly type `AGREE` to legally bind their gateway passcode to their identity under the E-SIGN Act.</p>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 30px;">Terms of Service Policy</h3>
+            <div class="legal-box" style="padding: 20px; background: rgba(255,255,255,0.05); border-left: 3px solid #ffcc00; border-radius: 5px; font-size: 0.9em; line-height: 1.6;">
+                <p>1. <strong>Non-Custodial Liability</strong>: The protocol and the authors have no access to the `ETHEREUM_PRIVATE_KEY` stored on the user's localhost. Users assume full liability for the security of their local environment.</p>
+                <p>2. <strong>AI Indemnification</strong>: AI models (OpenRouter, Ollama) are non-deterministic. The protocol mitigates risk via the "Strict HITL Safety Sandwich", but the ultimate fiduciary duty rests with the human supplying the 6-digit signature PIN.</p>
+                <p>3. <strong>Anti-Spoofing</strong>: M-Pesa 3.0 integrations require valid Safaricom cryptographic handshake verification. Exploitation of the webhook tunnels violating local financial laws results in automatic reporting.</p>
+            </div>
+        </section>
+
         <footer class="content-footer">
-            <p>&copy; 2026 Alvins Mukabane. Built for the future of Agentic Commerce.</p>
+            <p>&copy; 2026 Alvins Mukabane. Built for the future of Agentic Commerce. | <a href="#intro">Back to Top</a></p>
         </footer>
     </main>
 
