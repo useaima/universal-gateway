@@ -26,12 +26,26 @@ class HandoverSkill(SkillBase):
                     },
                     "required": ["reason"]
                 }
+            ),
+            types.Tool(
+                name="submit_signature_share",
+                description="Use this when the user gives you their secret 6-digit approval PIN to unlock a pending transaction.",
+                inputSchema={
+                    "type": "object",
+                    "properties": {
+                        "transaction_id": {"type": "string"},
+                        "pin": {"type": "string"}
+                    },
+                    "required": ["transaction_id", "pin"]
+                }
             )
         ]
 
     async def handle_tool_call(self, name: str, arguments: dict) -> List[types.TextContent]:
         if name == "request_human_handover":
             return await self._generate_handover_url(arguments)
+        elif name == "submit_signature_share":
+            return await self._submit_pin(arguments)
         return []
 
     async def _generate_handover_url(self, args: dict) -> List[types.TextContent]:
@@ -58,3 +72,19 @@ class HandoverSkill(SkillBase):
         )
         
         return [types.TextContent(type="text", text=res_msg)]
+
+    async def _submit_pin(self, args: dict) -> List[types.TextContent]:
+        from core.hitl_manager import HITLManager
+        import os
+        
+        tx_id = args["transaction_id"]
+        pin = args["pin"]
+        
+        # Verify PIN against environment rules
+        expected_pin = os.environ.get("GATEWAY_PASSCODE", "123456")
+        if str(pin).strip() != str(expected_pin).strip():
+            return [types.TextContent(type="text", text="❌ Access Denied: Incorrect PIN.")]
+            
+        hitl = HITLManager()
+        status = hitl.submit_signature_share(tx_id, "Alvins_Share")
+        return [types.TextContent(type="text", text=f"✅ PIN Accepted! Transaction Status is now: {status}. Please re-run the original transfer tool to finalize execution.")]

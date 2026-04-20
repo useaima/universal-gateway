@@ -11,7 +11,8 @@ dependencies = [
     "python-dotenv",
     "web3",
     "cryptography",
-    "fpdf2"
+    "fpdf2",
+    "browserbase"
 ]
 
 [project.scripts]
