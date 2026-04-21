@@ -111,8 +111,8 @@ class DeFiEthSkill(SkillBase):
             })
             return f"Funds securely settled with {conf_needed} confirmations."
 
-        # Run wrapped execution to enforce idempotency
-        res = await wrapper.execute_task("ETH_TRANSFER", step_logic, initial_quote=amount)
+        # Run wrapped execution to enforce idempotency and trigger cleanup
+        res = await wrapper.execute_task("ETH_TRANSFER", step_logic, initial_quote=amount, transaction_id=sig_hash)
         
         return [types.TextContent(type="text", text=str(res))]
 
