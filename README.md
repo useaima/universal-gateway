@@ -3,16 +3,23 @@
 </h1>
 
 <p align="center">
-  <strong>The Programmable Settlement Layer for the AI Agent Economy.</strong><br>
-  <em>Powered by the Eva Protocol Stack (v2.0)</em>
-</p>
+# Aima Universal Transaction Gateway (UTG)
 
-<p align="center">
-  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
-  <a href="https://www.python.org/downloads/release/python-3110/"><img src="https://img.shields.io/badge/python-3.11+-green.svg" alt="Python 3.11+"></a>
-  <a href="https://modelcontextprotocol.io/"><img src="https://img.shields.io/badge/Specification-MCP-orange.svg" alt="MCP Compatible"></a>
-  <a href="CODE_OF_CONDUCT.md"><img src="https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg" alt="Contributor Covenant"></a>
-</p>
+![Universal Transaction Gateway Hero](docs_site/assets/utg_hero.png)
+
+[![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
+[![Status: Experimental](https://img.shields.io/badge/Status-Experimental-orange.svg)]()
+[![Model Context Protocol](https://img.shields.io/badge/MCP-Compatible-blue.svg)]()
+
+> **The Biometric Firewall for AI Agents.** A non-custodial, human-in-the-loop (HITL) settlement protocol for OpenClaw and autonomous AI ecosystems.
+
+---
+
+## 🛡️ The "Safety Sandwich" Architecture
+
+![Safety Sandwich Architecture](docs_site/assets/safety_sandwich.png)
+
+The Aima UTG solves the "Identity Gap" in Agentic Commerce. You cannot give an AI agent your raw private key. Instead, the UTG dynamically intercepts the agent's *intent*, generates a cryptographic lock in a local SQLite vault, and physically **HALTS** the execution until the human provides a 6-digit Multi-Party Computation (MPC) PIN.
 
 ---
 
