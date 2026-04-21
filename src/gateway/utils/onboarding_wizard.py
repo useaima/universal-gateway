@@ -10,8 +10,8 @@ def clear_screen():
 def main():
     clear_screen()
     print("==========================================")
-    print("   🏦 Welcome to UTG GaaS Onboarding")
-    print("   The M-Pesa for Agents & OpenClaw")
+    print("   🏦 Welcome to Aima UTG Onboarding")
+    print("   The Programmable Financial Protocol")
     print("==========================================\n")
     
     print("This guided wizard will fully configure your Gateway.")
@@ -51,20 +51,29 @@ def main():
     else:
         print("✅ Custom wallet linked.")
 
-    # 4. Generate .env
-    print("\n[4/5] WRITING CONFIGURATION")
-    env_content = f"""# UTG GaaS Configuration
+    # 4. API Key Generation
+    print("\n[4/5] API CONNECTIVITY")
+    from core.api_key_manager import ApiKeyManager
+    akm = ApiKeyManager()
+    api_key = akm.generate_key("OpenClaw-Default")
+    print(f"✅ Generated Aima API Key: {api_key}")
+    print("   (This key ensures secure authorized communication with your agent).")
+
+    # 5. Generate .env
+    print("\n[5/5] WRITING CONFIGURATION")
+    env_content = f"""# Aima UTG Configuration
 # LEGAL: US E-SIGN ACT ACCEPTED
 GATEWAY_PASSCODE={passcode}
 ETHEREUM_PRIVATE_KEY={eth_key}
 ETHEREUM_RPC_URL=https://mainnet.gateway.tenderly.co/public
+AIMA_API_KEY={api_key}
 """
     with open(".env", "w") as f:
         f.write(env_content)
     print("✅ Configuration saved securely to your local Vault (.env)")
 
-    # 5. OpenClaw Auto-Config
-    print("\n[5/5] OPENCLAW AUTO-CONNECTION")
+    # 6. OpenClaw Auto-Config
+    print("\n[EXTRA] OPENCLAW AUTO-CONNECTION")
     auto_connect = input("Are you using OpenClaw? We can automatically connect it for you (y/n): ")
     if auto_connect.lower().startswith('y'):
         cwd = os.getcwd()

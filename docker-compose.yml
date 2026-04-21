@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  utg-gateway:
+    build: .
+    container_name: aima-utg-gateway
+    environment:
+      # CENTRALIZED SERVER STORAGE
+      - UTG_STORAGE_DIR=/app/server_data
+      - UTG_TRANSACTION_DB=/app/server_data/transactions.db
+      # ENVIRONMENT SECRETS (Injected at runtime)
+      - ETHEREUM_RPC_URL=${ETHEREUM_RPC_URL}
+      - ETHEREUM_PRIVATE_KEY=${ETHEREUM_PRIVATE_KEY}
+      - GATEWAY_PASSCODE=${GATEWAY_PASSCODE}
+      - AIMA_API_KEY=${AIMA_API_KEY}
+    volumes:
+      # Map the local server storage to the container
+      - ./server_data:/app/server_data
+    ports:
+      - "8080:8080"  # Gateway API
+      - "6080:6080"  # noVNC Visual View
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+    networks:
+      - aima_network
+
+networks:
+  aima_network:
+    driver: bridge
+
+volumes:
+  server_data:

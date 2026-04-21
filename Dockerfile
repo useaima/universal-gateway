@@ -20,7 +20,13 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 COPY src/ /app/src/
-COPY .env /app/.env
+
+# 3. Security: Add non-root user 'aima_agent'
+RUN useradd -ms /bin/bash aima_agent && \
+    mkdir -p /app/artifacts/logs && \
+    chown -R aima_agent:aima_agent /app
+
+USER aima_agent
 
 # Pre-fetch Camoufox browser binaries
 RUN python -m camoufox fetch
