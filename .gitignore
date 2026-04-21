@@ -20,3 +20,10 @@ artifacts/logs/*.json
 .playwright/
 downloads/
 screenshots/
+out.html
+
+# Docker / Deployment Data
+server_data/
+
+# Testing
+.pytest_cache/
