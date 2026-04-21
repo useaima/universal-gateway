@@ -20,14 +20,17 @@
         <nav>
             <ul class="nav-links">
                 <li class="nav-header">GETTING STARTED</li>
+                <li class="nav-header">GETTING STARTED</li>
                 <li><a href="#intro" class="active">Introduction</a></li>
-                <li><a href="#cloudflare-hosting">Free Cloudflare Setup</a></li>
+                <li><a href="#architecture">Protocol Architecture</a></li>
+                <li><a href="skill.md" target="_blank" style="color: #6c5ced; font-weight: 700;">🤖 For Agents (skill.md)</a></li>
+                <li><a href="#security-deep-dive">Security & Edge Cases</a></li>
                 <li><a href="#onboarding">Onboarding Wizard</a></li>
                 <li class="nav-header">INTEGRATION</li>
                 <li><a href="#agent-setup">Connecting to OpenClaw</a></li>
-                <li><a href="#real-world">Real World Scenario</a></li>
+                <li><a href="#changelog">Full Changelog</a></li>
                 <li class="nav-header">GOVERNANCE</li>
-                <li><a href="#security">Architecture & Security</a></li>
+                <li><a href="#security">Vault Security</a></li>
                 <li><a href="#legal">Legal & Compliance</a></li>
             </ul>
         </nav>
@@ -75,23 +78,38 @@
             </div>
         </section>
 
-        <section id="cloudflare-hosting" class="doc-section">
-            <h2>0. The 100% Free Cloudflare Setup</h2>
-            <p>Don't pay for expensive DigitalOcean servers. Because your domain is on Cloudflare, you can host the gateway infrastructure for <strong>$0/month</strong>.</p>
-            
-            <div class="feature-grid" style="margin-top: 20px;">
-                <div class="feature-card">
-                    <h3>1. Cloudflare Pages (The Website)</h3>
-                    <p>Go to your Cloudflare Dashboard -> Pages. Import this repository and set the Root Directory to <code>docs_site</code>. Point your custom domain (<code>utg.useaima.com</code>) to it.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>2. Your Laptop (The Server)</h3>
-                    <p>The gateway requires Python and Playwright. Run the server directly on your laptop using <code>utg-server</code>.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>3. Cloudflare Tunnels (The Bridge)</h3>
-                    <p>Use <code>cloudflared tunnel --url http://localhost:8080</code> to expose your laptop securely to the world (e.g., <code>api.utg.useaima.com</code>) without opening router ports.</p>
-                </div>
+        <section id="security-deep-dive" class="doc-section">
+            <h2>🛡️ Deep Dive: Security & Edge Cases</h2>
+            <p>Traditional finance bridges fail at the edge. Aima UTG is engineered to handle "Agentic Chaos"—the unpredictable behavior of LLMs.</p>
+
+            <h3>1. The Idempotency Lock (Double-Spend Prevention)</h3>
+            <p>If an AI agent retries a transaction 100 times due to a high-latency response, the Gateway uses deterministic hashing to ensure only one execution occurs.</p>
+            <div class="code-container">
+                <div class="code-header"><span>core/execution_wrapper.py</span></div>
+                <pre><code># Check if this task has already been processed
+id_key = f"{user_id}_{task_name}"
+memo = self.idempotency.check_key(id_key, user_id)
+if memo and memo["status"] == "SUCCESS":
+    return memo["response"] # Return cached result instantly</code></pre>
+            </div>
+
+            <h3>2. Execution Guardrails (Infinite Loop Prevention)</h3>
+            <p>Agents can fall into "reasoning loops." We enforce a strict temporal budget on every transaction to prevent resource exhaustion.</p>
+            <div class="code-container">
+                <div class="code-header"><span>core/execution_wrapper.py</span></div>
+                <pre><code># Anti-Loop & Timeout Check
+if time.time() - self.start_time > self.timeout:
+    return {"status": "FAILED", "error": f"Task Timeout"}</code></pre>
+            </div>
+
+            <h3>3. Hashed Credentials (Local Vault Security)</h3>
+            <p>Even if the local SQLite database is compromised, Aima never stores raw API keys. We use SHA-256 salted hashing to verify identity.</p>
+            <div class="code-container">
+                <div class="code-header"><span>core/api_key_manager.py</span></div>
+                <pre><code># Generate raw key but only store the hash
+raw_key = f"utg_{secrets.token_urlsafe(32)}"
+key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
+conn.execute("INSERT INTO api_keys (key_hash, name) VALUES (?, ?)")</code></pre>
             </div>
         </section>
 
@@ -156,21 +174,37 @@ npx playwright install firefox</code></pre>
             </div>
         </section>
 
-        <section id="real-world" class="doc-section">
-            <h2>🌍 Real World Case Study: Automated Investment Bot</h2>
-            <p>Imagine a full-stack financial application built to automate user budgets and investments.</p>
-            
-            <h3>The Problem</h3>
-            <p>If the application connects a user to a standard AI agent to "auto-invest" their capital, giving the AI raw access to private keys or commercial bank logins natively is catastrophically dangerous.</p>
+        <section id="api-keys" class="doc-section">
+            <h2>Managing API Keys</h2>
+            <p>Every connection to the Aima UTG must be authorized via an API key. You can generate these keys during onboarding or via the CLI.</p>
+            <div class="code-container">
+                <div class="code-header"><span>Terminal</span><button class="copy-btn">Copy</button></div>
+                <pre><code># Generate a new API Key for a specific client
+python src/gateway/utils/generate_key.py --name "Finance-Bot-01"</code></pre>
+            </div>
+            <p>Keys are hashed and stored in your <strong>Local Vault (SQLite)</strong>. The raw key is only shown once—save it securely!</p>
+        </section>
 
-            <h3>The UTG Gateway Solution</h3>
-            <p>By placing <strong>UTG GaaS</strong> in the middle, any financial application becomes an Agentic Commerce superpower safely:</p>
-            <ul class="feature-list" style="margin-top: 15px; margin-bottom: 25px;">
-                <li><strong>1. The AI decides:</strong> The OpenClaw agent analyzes the target database and decides, "The user has $50 extra this month, let's execute an investment in ETH."</li>
-                <li><strong>2. The AI commands:</strong> The agent calls the MCP tool <code>request_eth_transfer_reliable</code>.</li>
-                <li><strong>3. The Gateway HALTS (Safety Sandwich):</strong> The Gateway physically cuts the execution. It messages the user directly on Telegram/Slack: <em>"Your automated assistant wants to invest $50. Reply with your 6-digit PIN to approve."</em></li>
-                <li><strong>4. Non-Custodial Execution:</strong> The user replies "123456". The agent relays this to the Gateway via <code>submit_signature_share</code>. The Gateway verifies the PIN cryptographically and processes the transaction itself using its secured local vault.</li>
-            </ul>
+        <section id="changelog" class="doc-section">
+            <h2>Full Changelog</h2>
+            <div class="changelog-item">
+                <h3>v1.1.0 - The "Security & API" Update</h3>
+                <ul>
+                    <li>Added <strong>ApiKeyManager</strong> for hashed API key authorization.</li>
+                    <li>Integrated <strong>generate_key</strong> utility into the Onboarding Wizard.</li>
+                    <li>Refactored <strong>server.py</strong> to support AIMA_API_KEY environment validation.</li>
+                    <li>Removed direct Cloudflare dependencies from internal documentation.</li>
+                </ul>
+            </div>
+            <div class="changelog-item" style="margin-top: 20px;">
+                <h3>v1.0.0 - Initial Protocol Release</h3>
+                <ul>
+                    <li>Launched the <strong>Eva Protocol Stack</strong> core architecture.</li>
+                    <li>Implemented <strong>Strict HITL</strong> (Human-in-the-Loop) via 6-digit PIN.</li>
+                    <li>Added global <strong>IdempotencyManager</strong> to prevent double-spending.</li>
+                <li>Created the <strong>ExecutionWrapper</strong> for durable saga management.</li>
+                </ul>
+            </div>
         </section>
 
         <section id="legal" class="doc-section">

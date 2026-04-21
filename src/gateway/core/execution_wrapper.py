@@ -6,6 +6,7 @@ from typing import Dict, Any, Callable, Awaitable
 from core.audit_logger import AuditLogger
 from core.identity_manager import IdentityManager
 from core.idempotency_manager import IdempotencyManager
+from core.security_cleaner import SecurityCleaner
 
 class PriceMismatchException(Exception):
     pass
@@ -24,12 +25,13 @@ class ExecutionWrapper:
         self.audit_logger = AuditLogger()
         self.identity = IdentityManager()
         self.idempotency = IdempotencyManager()
+        self.cleaner = SecurityCleaner()
         self.task_budget = 5 
         self.start_time = time.time()
         self.timeout = 120 
 
-    async def execute_task(self, task_name: str, step_fn: Callable[[], Awaitable[Any]], initial_quote: float = None):
-        """Standardizes the lifecycle: Log -> PreFlight -> Execute -> Verify."""
+    async def execute_task(self, task_name: str, step_fn: Callable[[], Awaitable[Any]], initial_quote: float = None, transaction_id: str = None):
+        """Standardizes the lifecycle: Log -> PreFlight -> Execute -> Verify -> Cleanup."""
         print(f"[UTG GaaS] Wrapping task: {task_name} (User: {self.user_id})", file=sys.stderr)
         
         # 1. Edge Case: Clock Drift Check (Compliance requirement for AP2/JWT)
@@ -81,6 +83,10 @@ class ExecutionWrapper:
         except Exception as e:
             self._log_state(task_name, "FAILED", {"error": str(e)})
             return {"status": "FAILED", "error": str(e)}
+        finally:
+            # 8. SECURE CLEANUP (Ephemerality Guard)
+            if transaction_id:
+                self.cleaner.wipe_transaction_data(transaction_id)
 
     def _check_clock_drift(self):
         """Ensures the local clock is not drifted (Edge Case for security)."""

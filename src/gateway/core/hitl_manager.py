@@ -11,7 +11,11 @@ class HITLManager:
     Supports requiring multiple signature shares (e.g., Alvins AND Alicia) before 
     unblocking a non-custodial transaction.
     """
-    def __init__(self, db_path="artifacts/logs/transactions.db"):
+    def __init__(self, db_path=None):
+        if not db_path:
+            storage_dir = os.environ.get("UTG_STORAGE_DIR", "artifacts/logs")
+            db_path = os.path.join(storage_dir, "transactions.db")
+            
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self.db_path = db_path
         self._init_db()
