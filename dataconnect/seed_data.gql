@@ -1,0 +1,41 @@
+mutation CreateSeedData @transaction @auth(level: USER, insecureReason: "This operation is for seeding data and will be restricted to authenticated users only.") {
+  user1: user_insert(data: {
+    displayName: "Alice Smith",
+    createdAt: "2024-01-01T10:00:00Z",
+    email: "alice@example.com",
+    photoUrl: "https://example.com/alice.jpg"
+  })
+  user2: user_insert(data: {
+    displayName: "Bob Johnson",
+    createdAt: "2024-01-02T11:00:00Z",
+    email: "bob@example.com",
+    photoUrl: "https://example.com/bob.jpg"
+  })
+  yesItem1: yesItem_insert(data: {
+    userId_expr: "mutation.user1.id",
+    description: "Buy groceries for the week",
+    createdAt: "2024-01-01T12:00:00Z",
+    isComplete: false,
+    dueDate: "2024-01-05"
+  })
+  yesItem2: yesItem_insert(data: {
+    userId_expr: "mutation.user1.id",
+    description: "Schedule dentist appointment",
+    createdAt: "2024-01-03T09:00:00Z",
+    isComplete: true,
+    completedAt: "2024-01-03T14:00:00Z"
+  })
+  noItem1: noItem_insert(data: {
+    userId_expr: "mutation.user2.id",
+    description: "Fix leaky faucet",
+    createdAt: "2024-01-02T13:00:00Z",
+    status: "Pending",
+    reason: "Awaiting parts"
+  })
+  reflection1: reflection_insert(data: {
+    userId_expr: "mutation.user1.id",
+    createdAt: "2024-01-04T16:00:00Z",
+    content: "Had a productive day, managed to clear most of my backlog.",
+    sentiment: "Positive"
+  })
+}

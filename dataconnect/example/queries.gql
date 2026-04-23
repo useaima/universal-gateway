@@ -1,0 +1,41 @@
+query ListAllUsers @auth(level: USER, insecureReason: "This operation is safe to expose to all logged in users.") {
+  users {
+    id
+    displayName
+    email
+    createdAt
+  }
+}
+
+mutation CreateReflection($content: String!, $sentiment: String) @auth(level: USER) {
+  reflection_insert(data: {
+    userId_expr: "auth.uid",
+    content: $content,
+    sentiment: $sentiment,
+    createdAt_expr: "request.time"
+  }) {
+    id
+  }
+}
+
+query GetUserNoItems @auth(level: USER) {
+  noItems(where: { userId: { eq_expr: "auth.uid" } }) {
+    id
+    description
+    status
+    createdAt
+    deferredUntil
+  }
+}
+
+mutation MarkYesItemComplete($id: UUID!) @auth(level: USER) {
+  yesItem_update(
+    key: { id: $id },
+    data: {
+      isComplete: true,
+      completedAt_expr: "request.time"
+    }
+  ) {
+    id
+  }
+}
