@@ -1,0 +1,15 @@
+connectorId: example
+generate:
+  javascriptSdk:
+    - outputDir: ..\..\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..
+      react: false
+      angular: false
+      clientCache: {}
+    - outputDir: ..\..\src\web_dashboard\src\dataconnect-generated
+      package: "@dataconnect/generated"
+      packageJsonDir: ..\..\src\web_dashboard
+      react: true
+      angular: false
+      clientCache: {}

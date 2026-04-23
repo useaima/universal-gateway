@@ -1,0 +1,31 @@
+type User @table {
+  displayName: String!
+  createdAt: Timestamp!
+  email: String
+  photoUrl: String
+}
+
+type NoItem @table {
+  user: User!
+  description: String!
+  createdAt: Timestamp!
+  status: String!
+  reason: String
+  deferredUntil: Date
+}
+
+type YesItem @table {
+  user: User!
+  description: String!
+  createdAt: Timestamp!
+  isComplete: Boolean!
+  dueDate: Date
+  completedAt: Timestamp
+}
+
+type Reflection @table {
+  user: User!
+  createdAt: Timestamp!
+  content: String!
+  sentiment: String
+}
