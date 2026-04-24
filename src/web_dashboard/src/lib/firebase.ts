@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, RecaptchaVerifier } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
 
 // Pulling configuration from Vercel/Vite Environment Variables
 const firebaseConfig = {
@@ -15,6 +16,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+export const db = getFirestore(app);
 
 export const setupRecaptcha = (buttonId: string) => {
   return new RecaptchaVerifier(auth, buttonId, {
