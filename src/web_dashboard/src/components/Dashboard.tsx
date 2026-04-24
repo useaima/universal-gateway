@@ -1,145 +1,99 @@
 import { useState } from 'react';
-import { Key, Copy, Activity, ShieldCheck, CreditCard, LogOut, Code } from 'lucide-react';
-import Navbar from './Navbar';
+import { LayoutDashboard, ArrowLeftRight, Settings, Bell, LogOut, ShieldCheck } from 'lucide-react';
+import OverviewView from './dashboard/OverviewView';
+import TransactionsView from './dashboard/TransactionsView';
+import SettingsView from './dashboard/SettingsView';
+import NotificationsView from './dashboard/NotificationsView';
 
 interface DashboardProps {
   onLogout: () => void;
   userEmail: string;
 }
 
+type ViewState = 'overview' | 'transactions' | 'settings' | 'notifications';
+
 export default function Dashboard({ onLogout, userEmail }: DashboardProps) {
-  const [copied, setCopied] = useState(false);
+  const [activeView, setActiveView] = useState<ViewState>('overview');
   const apiKey = "sk_live_aima_8f92a1b3c4d5e6f7g8h9i0j1k2l3m4n5";
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(apiKey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const navItems = [
+    { id: 'overview', label: 'Overview', icon: LayoutDashboard },
+    { id: 'transactions', label: 'Transactions', icon: ArrowLeftRight },
+    { id: 'settings', label: 'Configuration', icon: Settings },
+    { id: 'notifications', label: 'Alerts', icon: Bell },
+  ] as const;
 
   return (
-    <div className="min-h-screen bg-brand-cream text-brand-dark flex flex-col font-sans">
-      <Navbar />
+    <div className="min-h-screen bg-brand-cream text-brand-dark flex font-sans">
       
-      <main className="flex-grow max-w-7xl w-full mx-auto px-4 py-12 mt-20">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10">
-          <div>
-            <h1 className="text-4xl font-extrabold mb-2 text-brand-dark">Dashboard</h1>
-            <p className="text-brand-muted font-medium">Welcome back, {userEmail}</p>
+      {/* Sidebar */}
+      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col fixed h-full z-20">
+        <div className="p-6 border-b border-gray-100 flex items-center space-x-3">
+          <img src="/logo.png" alt="Aima Logo" className="w-8 h-8 object-contain" />
+          <span className="text-xl font-bold tracking-tight">Aima UTG</span>
+        </div>
+        
+        <div className="px-4 py-6 flex-grow">
+          <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-4 px-2">Menu</p>
+          <nav className="space-y-2">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveView(item.id)}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-bold transition-all ${
+                  activeView === item.id 
+                    ? 'bg-brand-dark text-brand-gold shadow-md' 
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-brand-dark'
+                }`}
+              >
+                <item.icon className={`w-5 h-5 ${activeView === item.id ? 'text-brand-gold' : 'text-gray-400'}`} />
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        <div className="p-4 border-t border-gray-100">
+          <div className="bg-brand-gold/10 rounded-xl p-4 border border-brand-gold/20 mb-4 flex items-start space-x-3">
+             <ShieldCheck className="w-5 h-5 text-yellow-700 mt-0.5" />
+             <div>
+               <p className="text-xs font-bold text-yellow-900 uppercase">Protection Active</p>
+               <p className="text-[10px] text-yellow-800 font-medium leading-tight mt-1">Biometric firewall is securing transactions.</p>
+             </div>
           </div>
+          
           <button 
             onClick={onLogout}
-            className="mt-4 md:mt-0 flex items-center space-x-2 text-gray-500 hover:text-red-600 transition-colors bg-white px-4 py-2 rounded-lg border border-gray-200 shadow-sm font-bold"
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl font-bold text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-5 h-5" />
             <span>Sign Out</span>
           </button>
         </div>
+      </aside>
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          
-          {/* Main Content Area */}
-          <div className="lg:col-span-2 space-y-8">
-            
-            {/* API Key Section */}
-            <section className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl shadow-brand-beige/50">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                  <Key className="w-6 h-6" />
-                </div>
-                <h2 className="text-2xl font-bold">Your Gateway Key</h2>
-              </div>
-              <p className="text-brand-muted mb-6 font-medium">
-                This is your master API key. Inject this into your OpenClaw or LangChain agent environment variables. Keep it secret.
-              </p>
-              
-              <div className="flex items-center space-x-4">
-                <div className="flex-grow bg-gray-50 border border-gray-200 rounded-xl p-4 font-mono text-sm text-gray-700 overflow-hidden text-ellipsis">
-                  {apiKey}
-                </div>
-                <button 
-                  onClick={handleCopy}
-                  className="flex-shrink-0 bg-brand-dark text-white px-6 py-4 rounded-xl font-bold hover:bg-black transition-colors flex items-center space-x-2 min-w-[120px] justify-center"
-                >
-                  {copied ? (
-                    <span className="text-green-400">Copied!</span>
-                  ) : (
-                    <>
-                      <Copy className="w-5 h-5" />
-                      <span>Copy</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </section>
-
-            {/* Quick Setup Code Snippet */}
-            <section className="bg-brand-dark rounded-3xl p-8 shadow-xl text-white">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="p-3 bg-gray-800 text-brand-gold rounded-xl">
-                  <Code className="w-6 h-6" />
-                </div>
-                <h2 className="text-2xl font-bold text-white">Quick Integration</h2>
-              </div>
-              <p className="text-gray-400 mb-6 font-medium">
-                Pass the API key to the UTG Client to initialize your agent's transaction capabilities.
-              </p>
-              <div className="bg-[#0D1117] rounded-xl p-6 border border-gray-800 font-mono text-sm text-gray-300 overflow-x-auto">
-                <pre>
-                  <code>
-<span className="text-pink-400">import</span> {'{'} UTGClient {'}'} <span className="text-pink-400">from</span> <span className="text-green-300">'@useaima/utg-sdk'</span>;{'\n\n'}
-<span className="text-pink-400">const</span> client = <span className="text-pink-400">new</span> UTGClient({'{'}{'\n'}
-{'  '}apiKey: process.env.AIMA_API_KEY,{'\n'}
-{'  '}network: <span className="text-green-300">'base-mainnet'</span>{'\n'}
-{'}'});{'\n\n'}
-<span className="text-gray-500">// Your agent can now securely execute</span>{'\n'}
-<span className="text-pink-400">await</span> client.execute(agentIntent);
-                  </code>
-                </pre>
-              </div>
-            </section>
+      {/* Main Content */}
+      <main className="flex-grow ml-64 p-8 md:p-12">
+        <header className="flex justify-between items-center mb-10 pb-6 border-b border-gray-200">
+          <h1 className="text-3xl font-extrabold capitalize text-brand-dark">
+            {activeView === 'settings' ? 'Configuration' : activeView}
+          </h1>
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-brand-gold flex items-center justify-center font-bold text-yellow-900 text-lg shadow-sm border border-yellow-400">
+              {userEmail.charAt(0).toUpperCase()}
+            </div>
+            <div className="hidden md:block text-sm font-bold text-gray-700">
+              {userEmail}
+            </div>
           </div>
+        </header>
 
-          {/* Sidebar / Stats */}
-          <div className="space-y-8">
-            <section className="bg-white rounded-3xl p-8 border border-gray-100 shadow-xl shadow-brand-beige/50">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="p-3 bg-green-50 text-green-600 rounded-xl">
-                  <Activity className="w-6 h-6" />
-                </div>
-                <h2 className="text-xl font-bold">Activity</h2>
-              </div>
-              
-              <div className="space-y-6">
-                <div>
-                  <div className="text-4xl font-black text-brand-dark mb-1">0</div>
-                  <div className="text-sm font-bold text-brand-muted uppercase tracking-wider">Transactions Processed</div>
-                </div>
-                <div className="pt-6 border-t border-gray-100">
-                  <div className="text-4xl font-black text-brand-dark mb-1">$0.00</div>
-                  <div className="text-sm font-bold text-brand-muted uppercase tracking-wider">Volume Handled</div>
-                </div>
-              </div>
-            </section>
+        {/* Dynamic View Rendering */}
+        {activeView === 'overview' && <OverviewView apiKey={apiKey} />}
+        {activeView === 'transactions' && <TransactionsView />}
+        {activeView === 'settings' && <SettingsView />}
+        {activeView === 'notifications' && <NotificationsView />}
 
-            <section className="bg-brand-gold/10 rounded-3xl p-8 border border-brand-gold/20">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="p-3 bg-brand-gold/20 text-yellow-800 rounded-xl">
-                  <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h2 className="text-xl font-bold text-yellow-900">Security Status</h2>
-              </div>
-              <p className="text-yellow-800 font-medium mb-4 text-sm leading-relaxed">
-                Biometric Safety Sandwich is currently active. All agent proposals require human-in-the-loop wallet signatures.
-              </p>
-              <div className="inline-flex items-center space-x-2 bg-white px-4 py-2 rounded-lg shadow-sm border border-brand-gold/30">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-bold text-brand-dark uppercase tracking-wide">Protected</span>
-              </div>
-            </section>
-          </div>
-
-        </div>
       </main>
     </div>
   );
