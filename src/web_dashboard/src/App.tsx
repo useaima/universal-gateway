@@ -8,6 +8,10 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import FeatureGrid from './components/FeatureGrid';
 import Footer from './components/Footer';
+import HowItWorks from './components/HowItWorks';
+import Testimonials from './components/Testimonials';
+import AuthModal from './components/AuthModal';
+import { useState } from 'react';
 
 const config = getDefaultConfig({
   appName: 'Aima UTG',
@@ -23,12 +27,17 @@ const config = getDefaultConfig({
 const queryClient = new QueryClient();
 
 function LandingPage() {
+  const [isAuthOpen, setIsAuthOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-brand-cream text-brand-dark flex flex-col font-sans">
       <Navbar />
-      <Hero />
+      <Hero onOpenAuth={() => setIsAuthOpen(true)} />
+      <HowItWorks />
       <FeatureGrid />
+      <Testimonials />
       <Footer />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
     </div>
   );
 }
