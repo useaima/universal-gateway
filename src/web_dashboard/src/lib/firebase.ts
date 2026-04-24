@@ -12,13 +12,26 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app);
+// Initialize Firebase with error safety for production
+let app;
+let auth: any;
+let db: any;
+let googleProvider: any;
+
+try {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+  googleProvider = new GoogleAuthProvider();
+  console.log("UTG: Firebase initialized successfully.");
+} catch (error) {
+  console.error("UTG: Firebase initialization FAILED:", error);
+}
+
+export { auth, db, googleProvider };
 
 export const setupRecaptcha = (buttonId: string) => {
+  if (!auth) return null;
   return new RecaptchaVerifier(auth, buttonId, {
     size: 'invisible'
   });
