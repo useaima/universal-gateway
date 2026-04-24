@@ -10,7 +10,7 @@ import FeatureGrid from './components/FeatureGrid';
 import Footer from './components/Footer';
 import HowItWorks from './components/HowItWorks';
 import Testimonials from './components/Testimonials';
-import AuthModal from './components/AuthModal';
+import RegistrationFlow from './components/RegistrationFlow';
 import Dashboard from './components/Dashboard';
 import Onboarding from './components/Onboarding';
 import { useState } from 'react';
@@ -29,31 +29,39 @@ const config = getDefaultConfig({
 const queryClient = new QueryClient();
 
 function LandingPage({ onLoginSuccess }: { onLoginSuccess: (email: string) => void }) {
-  const [isAuthOpen, setIsAuthOpen] = useState(false);
-
+  // onLoginSuccess now actually maps to handleStartRegistration from App
   return (
     <div className="min-h-screen bg-brand-cream text-brand-dark flex flex-col font-sans">
       <Navbar />
-      <Hero onOpenAuth={() => setIsAuthOpen(true)} />
+      <Hero onOpenAuth={() => onLoginSuccess("trigger")} />
       <HowItWorks />
       <FeatureGrid />
       <Testimonials />
       <Footer />
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onLoginSuccess={onLoginSuccess} />
     </div>
   );
 }
 
 export default function App() {
+  const [showRegistration, setShowRegistration] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isOnboarded, setIsOnboarded] = useState(false);
   const [userEmail, setUserEmail] = useState("");
 
-  const handleLoginSuccess = (email: string) => {
+  const handleStartRegistration = () => {
+    setShowRegistration(true);
+  };
+
+  const handleRegistrationComplete = (email: string) => {
     setUserEmail(email);
     setIsAuthenticated(true);
-    // In a real app, you would check Firestore here to see if they already completed onboarding
-    // For now, we always route to onboarding first
+    setShowRegistration(false);
+  };
+
+  const handleLoginSuccess = (email: string) => {
+    // Legacy support if they bypass registration (e.g., session already valid)
+    setUserEmail(email);
+    setIsAuthenticated(true);
   };
 
   const handleOnboardingComplete = () => {
@@ -63,6 +71,7 @@ export default function App() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setIsOnboarded(false);
+    setShowRegistration(false);
     setUserEmail("");
   };
 
@@ -76,8 +85,10 @@ export default function App() {
             ) : (
               <Onboarding userEmail={userEmail} onComplete={handleOnboardingComplete} />
             )
+          ) : showRegistration ? (
+            <RegistrationFlow onRegistrationComplete={handleRegistrationComplete} />
           ) : (
-            <LandingPage onLoginSuccess={handleLoginSuccess} />
+            <LandingPage onLoginSuccess={handleStartRegistration} />
           )}
         </RainbowKitProvider>
       </QueryClientProvider>
