@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { X, Mail, Lock, ArrowRight } from 'lucide-react';
-// import { auth, googleProvider } from '../lib/firebase';
-// import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { auth, googleProvider } from '../lib/firebase';
+import { signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -24,19 +24,14 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModal
     setIsLoading(true);
     
     try {
-      // Temporary mock for UI testing. When firebase is fully active, uncomment imports.
-      console.log(isSignUp ? "Signing up:" : "Logging in:", email);
-      // if (isSignUp) {
-      //   await createUserWithEmailAndPassword(auth, email, password);
-      // } else {
-      //   await signInWithEmailAndPassword(auth, email, password);
-      // }
-      // onClose();
-      setTimeout(() => {
-        setIsLoading(false);
-        onLoginSuccess(email);
-        onClose();
-      }, 800);
+      if (isSignUp) {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+      setIsLoading(false);
+      onLoginSuccess(email);
+      onClose();
     } catch (err: any) {
       setError(err.message);
       setIsLoading(false);
@@ -45,8 +40,8 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModal
 
   const handleGoogleSignIn = async () => {
     try {
-      // await signInWithPopup(auth, googleProvider);
-      onLoginSuccess("developer@google.com");
+      const result = await signInWithPopup(auth, googleProvider);
+      onLoginSuccess(result.user.email || "user@google.com");
       onClose();
     } catch (err: any) {
       setError(err.message);

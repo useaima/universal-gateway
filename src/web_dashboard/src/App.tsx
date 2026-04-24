@@ -12,6 +12,7 @@ import HowItWorks from './components/HowItWorks';
 import Testimonials from './components/Testimonials';
 import AuthModal from './components/AuthModal';
 import Dashboard from './components/Dashboard';
+import Onboarding from './components/Onboarding';
 import { useState } from 'react';
 
 const config = getDefaultConfig({
@@ -45,15 +46,23 @@ function LandingPage({ onLoginSuccess }: { onLoginSuccess: (email: string) => vo
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isOnboarded, setIsOnboarded] = useState(false);
   const [userEmail, setUserEmail] = useState("");
 
   const handleLoginSuccess = (email: string) => {
     setUserEmail(email);
     setIsAuthenticated(true);
+    // In a real app, you would check Firestore here to see if they already completed onboarding
+    // For now, we always route to onboarding first
+  };
+
+  const handleOnboardingComplete = () => {
+    setIsOnboarded(true);
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
+    setIsOnboarded(false);
     setUserEmail("");
   };
 
@@ -62,7 +71,11 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
           {isAuthenticated ? (
-            <Dashboard onLogout={handleLogout} userEmail={userEmail} />
+            isOnboarded ? (
+              <Dashboard onLogout={handleLogout} userEmail={userEmail} />
+            ) : (
+              <Onboarding userEmail={userEmail} onComplete={handleOnboardingComplete} />
+            )
           ) : (
             <LandingPage onLoginSuccess={handleLoginSuccess} />
           )}
