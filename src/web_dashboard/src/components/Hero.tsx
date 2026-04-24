@@ -1,6 +1,10 @@
 import { Shield, ArrowRight } from 'lucide-react';
 
-export default function Hero() {
+interface HeroProps {
+  onOpenAuth: () => void;
+}
+
+export default function Hero({ onOpenAuth }: HeroProps) {
   return (
     <main className="flex-grow flex flex-col items-center justify-center text-center px-4 relative mt-20 mb-32">
       {/* Background glow effects */}
@@ -21,7 +25,10 @@ export default function Hero() {
       </p>
 
       <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 z-10">
-        <button className="bg-brand-dark text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-black transition-all shadow-xl hover:shadow-2xl flex items-center justify-center space-x-2 group">
+        <button 
+          onClick={onOpenAuth}
+          className="bg-brand-dark text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-black transition-all shadow-xl hover:shadow-2xl flex items-center justify-center space-x-2 group"
+        >
           <span>Get API Key</span>
           <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </button>
