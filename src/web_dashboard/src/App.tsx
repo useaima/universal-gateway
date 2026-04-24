@@ -91,7 +91,23 @@ export default function App() {
           ) : showRegistration ? (
             <RegistrationFlow onRegistrationComplete={handleRegistrationComplete} />
           ) : (
-            <LandingPage onLoginSuccess={handleStartRegistration} />
+            <div className="relative">
+              <LandingPage onLoginSuccess={handleStartRegistration} />
+              
+              {/* Master Test Bypass for End-to-End UI/UX Testing */}
+              <div className="fixed bottom-4 left-4 z-50">
+                <button 
+                  onClick={() => {
+                    setUserEmail("developer-test@aima.com");
+                    setIsAuthenticated(true);
+                    setIsOnboarded(true);
+                  }}
+                  className="bg-brand-dark/20 hover:bg-brand-dark text-brand-dark hover:text-white px-4 py-2 rounded-full text-[10px] font-bold transition-all border border-brand-dark/30 shadow-lg backdrop-blur-md"
+                >
+                  Bypass to Dashboard (UI Test)
+                </button>
+              </div>
+            </div>
           )}
         </RainbowKitProvider>
       </QueryClientProvider>
