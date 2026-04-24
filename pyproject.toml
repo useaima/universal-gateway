@@ -12,7 +12,8 @@ dependencies = [
     "web3",
     "cryptography",
     "fpdf2",
-    "browserbase"
+    "browserbase",
+    "google-cloud-recaptcha-enterprise"
 ]
 
 [project.scripts]

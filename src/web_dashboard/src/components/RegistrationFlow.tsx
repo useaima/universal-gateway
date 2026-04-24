@@ -180,6 +180,14 @@ export default function RegistrationFlow({ onRegistrationComplete }: Registratio
                   <span>{isLoading ? 'Processing...' : 'Sign Up'}</span>
                   {!isLoading && <ArrowRight className="w-5 h-5" />}
                 </button>
+
+                <button 
+                  type="button"
+                  onClick={() => onRegistrationComplete(email || "test@aima.com")}
+                  className="w-full mt-4 py-2 text-xs font-bold text-gray-400 hover:text-brand-dark transition-colors border border-dashed border-gray-200 rounded-lg"
+                >
+                  Skip to Dashboard (Test Mode)
+                </button>
               </form>
             </div>
           )}
