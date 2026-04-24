@@ -6,9 +6,10 @@ import { X, Mail, Lock, ArrowRight } from 'lucide-react';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onLoginSuccess: (email: string) => void;
 }
 
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, onLoginSuccess }: AuthModalProps) {
   const [isSignUp, setIsSignUp] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,9 +34,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       // onClose();
       setTimeout(() => {
         setIsLoading(false);
-        alert(isSignUp ? "Account created successfully!" : "Logged in successfully!");
+        onLoginSuccess(email);
         onClose();
-      }, 1000);
+      }, 800);
     } catch (err: any) {
       setError(err.message);
       setIsLoading(false);
@@ -45,7 +46,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const handleGoogleSignIn = async () => {
     try {
       // await signInWithPopup(auth, googleProvider);
-      alert("Google Sign In flow triggered");
+      onLoginSuccess("developer@google.com");
       onClose();
     } catch (err: any) {
       setError(err.message);
