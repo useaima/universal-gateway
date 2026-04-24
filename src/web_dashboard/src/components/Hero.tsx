@@ -29,7 +29,7 @@ export default function Hero({ onOpenAuth }: HeroProps) {
           onClick={onOpenAuth}
           className="bg-brand-dark text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-black transition-all shadow-xl hover:shadow-2xl flex items-center justify-center space-x-2 group"
         >
-          <span>Get API Key</span>
+          <span>Get Started</span>
           <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
         </button>
         <a href="/docs/index.html" className="bg-white text-brand-dark border border-gray-200 px-8 py-4 rounded-xl font-bold text-lg hover:bg-gray-50 transition-all shadow-sm inline-block">
