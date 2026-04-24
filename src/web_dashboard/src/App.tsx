@@ -15,9 +15,12 @@ import Dashboard from './components/Dashboard';
 import Onboarding from './components/Onboarding';
 import { useState } from 'react';
 
+// Use a valid format projectId or pull from env
+const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '11111111111111111111111111111111';
+
 const config = getDefaultConfig({
   appName: 'Aima UTG',
-  projectId: 'aima_utg_project_id', // Placeholder for WalletConnect Cloud
+  projectId: projectId,
   chains: [mainnet, sepolia, base],
   transports: {
     [mainnet.id]: http(),
