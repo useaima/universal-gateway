@@ -11,6 +11,7 @@ import Footer from './components/Footer';
 import HowItWorks from './components/HowItWorks';
 import Testimonials from './components/Testimonials';
 import AuthModal from './components/AuthModal';
+import Dashboard from './components/Dashboard';
 import { useState } from 'react';
 
 const config = getDefaultConfig({
@@ -26,7 +27,7 @@ const config = getDefaultConfig({
 
 const queryClient = new QueryClient();
 
-function LandingPage() {
+function LandingPage({ onLoginSuccess }: { onLoginSuccess: (email: string) => void }) {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
 
   return (
@@ -37,17 +38,34 @@ function LandingPage() {
       <FeatureGrid />
       <Testimonials />
       <Footer />
-      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />
+      <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} onLoginSuccess={onLoginSuccess} />
     </div>
   );
 }
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+
+  const handleLoginSuccess = (email: string) => {
+    setUserEmail(email);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setUserEmail("");
+  };
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider>
-          <LandingPage />
+          {isAuthenticated ? (
+            <Dashboard onLogout={handleLogout} userEmail={userEmail} />
+          ) : (
+            <LandingPage onLoginSuccess={handleLoginSuccess} />
+          )}
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>
