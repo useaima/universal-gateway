@@ -11,11 +11,11 @@ const mockTransactions = [
 const StatusBadge = ({ status }: { status: string }) => {
   switch (status) {
     case 'Completed':
-      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200"><CheckCircle2 className="w-3 h-3 mr-1" /> Completed</span>;
+      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono bg-defi-emerald/20 text-defi-emerald border border-defi-emerald/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]"><CheckCircle2 className="w-3 h-3 mr-1" /> SETTLED</span>;
     case 'Pending Review':
-      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200"><Clock className="w-3 h-3 mr-1" /> Human Review</span>;
+      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 shadow-[0_0_10px_rgba(234,179,8,0.2)]"><Clock className="w-3 h-3 mr-1" /> AWAITING_SIG</span>;
     case 'Blocked':
-      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200"><AlertCircle className="w-3 h-3 mr-1" /> Blocked</span>;
+      return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-mono bg-red-500/20 text-red-400 border border-red-500/30 shadow-[0_0_10px_rgba(239,68,68,0.2)]"><AlertCircle className="w-3 h-3 mr-1" /> HALTED</span>;
     default:
       return <span>{status}</span>;
   }
@@ -24,19 +24,19 @@ const StatusBadge = ({ status }: { status: string }) => {
 export default function TransactionsView() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+      <div className="bg-defi-surface rounded-3xl border border-defi-border shadow-[0_0_30px_rgba(139,92,246,0.1)] overflow-hidden">
         
         {/* Header */}
-        <div className="px-8 py-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="px-8 py-6 border-b border-defi-border flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-defi-surface/50">
           <div>
-            <h2 className="text-xl font-bold text-brand-dark">Agent Transactions</h2>
-            <p className="text-sm text-brand-muted font-medium mt-1">Monitor all programmatic transfers and executions.</p>
+            <h2 className="text-xl font-bold text-white tracking-tight">On-Chain Activity</h2>
+            <p className="text-sm text-defi-muted font-mono mt-1">Monitor all programmatic transfers and smart contract executions.</p>
           </div>
           <div className="flex space-x-3">
-            <button className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-bold text-gray-600 hover:bg-gray-50 transition-colors">
+            <button className="px-4 py-2 bg-defi-dark border border-defi-border rounded-lg text-sm font-mono text-gray-300 hover:bg-defi-surfaceHover hover:text-white transition-colors">
               Filter
             </button>
-            <button className="px-4 py-2 bg-brand-dark text-white rounded-lg text-sm font-bold hover:bg-black transition-colors">
+            <button className="px-4 py-2 bg-defi-accent text-white rounded-lg text-sm font-bold hover:bg-violet-600 transition-colors shadow-[0_0_15px_rgba(139,92,246,0.3)]">
               Export CSV
             </button>
           </div>
@@ -44,36 +44,36 @@ export default function TransactionsView() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-defi-border">
+            <thead className="bg-defi-dark">
               <tr>
-                <th scope="col" className="px-8 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Transaction ID</th>
-                <th scope="col" className="px-8 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Agent / Network</th>
-                <th scope="col" className="px-8 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Amount (USD)</th>
-                <th scope="col" className="px-8 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" className="px-8 py-4 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Time</th>
+                <th scope="col" className="px-8 py-4 text-left text-xs font-mono text-defi-muted uppercase tracking-wider">Transaction ID</th>
+                <th scope="col" className="px-8 py-4 text-left text-xs font-mono text-defi-muted uppercase tracking-wider">Agent / Network</th>
+                <th scope="col" className="px-8 py-4 text-left text-xs font-mono text-defi-muted uppercase tracking-wider">Amount (USD)</th>
+                <th scope="col" className="px-8 py-4 text-left text-xs font-mono text-defi-muted uppercase tracking-wider">Status</th>
+                <th scope="col" className="px-8 py-4 text-left text-xs font-mono text-defi-muted uppercase tracking-wider">Time</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
+            <tbody className="bg-defi-surface divide-y divide-defi-border">
               {mockTransactions.map((tx) => (
-                <tr key={tx.id} className="hover:bg-gray-50/50 transition-colors">
-                  <td className="px-8 py-5 whitespace-nowrap text-sm font-mono text-gray-600">
+                <tr key={tx.id} className="hover:bg-defi-surfaceHover transition-colors">
+                  <td className="px-8 py-5 whitespace-nowrap text-sm font-mono text-gray-400">
                     {tx.id}
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
-                    <div className="text-sm font-bold text-brand-dark">{tx.agent}</div>
-                    <div className="text-xs text-gray-500 font-medium">{tx.network}</div>
+                    <div className="text-sm font-bold text-gray-200">{tx.agent}</div>
+                    <div className="text-xs text-defi-muted font-mono">{tx.network}</div>
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
-                    <div className={`flex items-center text-sm font-bold ${tx.type === 'in' ? 'text-green-600' : 'text-gray-900'}`}>
-                      {tx.type === 'in' ? <ArrowDownRight className="w-4 h-4 mr-1" /> : <ArrowUpRight className="w-4 h-4 mr-1 text-gray-400" />}
+                    <div className={`flex items-center text-sm font-mono ${tx.type === 'in' ? 'text-defi-emerald' : 'text-gray-300'}`}>
+                      {tx.type === 'in' ? <ArrowDownRight className="w-4 h-4 mr-1 text-defi-emerald" /> : <ArrowUpRight className="w-4 h-4 mr-1 text-gray-500" />}
                       ${tx.amount.toFixed(2)}
                     </div>
                   </td>
                   <td className="px-8 py-5 whitespace-nowrap">
                     <StatusBadge status={tx.status} />
                   </td>
-                  <td className="px-8 py-5 whitespace-nowrap text-sm text-gray-500 font-medium">
+                  <td className="px-8 py-5 whitespace-nowrap text-sm text-defi-muted font-mono">
                     {tx.time}
                   </td>
                 </tr>
@@ -83,11 +83,11 @@ export default function TransactionsView() {
         </div>
         
         {/* Pagination (Mock) */}
-        <div className="px-8 py-4 border-t border-gray-100 flex items-center justify-between">
-          <span className="text-sm text-gray-500 font-medium">Showing 1 to 5 of 42 transactions</span>
+        <div className="px-8 py-4 border-t border-defi-border flex items-center justify-between bg-defi-surface/50">
+          <span className="text-sm text-defi-muted font-mono">Showing 1 to 5 of 42 transactions</span>
           <div className="flex space-x-2">
-            <button className="px-3 py-1 border border-gray-200 rounded text-sm text-gray-400 cursor-not-allowed">Previous</button>
-            <button className="px-3 py-1 border border-gray-200 rounded text-sm font-bold text-brand-dark hover:bg-gray-50">Next</button>
+            <button className="px-3 py-1 bg-defi-dark border border-defi-border rounded text-sm font-mono text-gray-500 cursor-not-allowed">Previous</button>
+            <button className="px-3 py-1 bg-defi-dark border border-defi-border rounded text-sm font-mono text-gray-300 hover:bg-defi-surfaceHover hover:text-white">Next</button>
           </div>
         </div>
 

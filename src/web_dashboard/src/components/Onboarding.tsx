@@ -74,41 +74,42 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-brand-cream text-brand-dark flex flex-col font-sans items-center justify-center py-12 px-4">
-      <div className="max-w-2xl w-full bg-white rounded-3xl shadow-2xl p-10 border border-brand-beige">
+    <div className="min-h-screen bg-defi-dark text-gray-200 flex flex-col font-sans items-center justify-center py-12 px-4 relative">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-defi-emerald/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
+      <div className="max-w-2xl w-full bg-defi-surface/80 backdrop-blur-xl rounded-3xl shadow-[0_0_40px_rgba(16,185,129,0.15)] p-10 border border-defi-border">
         
         <div className="text-center mb-10">
-          <ShieldCheck className="w-16 h-16 text-brand-gold mx-auto mb-4" />
-          <h1 className="text-3xl font-extrabold mb-2">UTG Configuration</h1>
-          <p className="text-brand-muted font-medium">Set up your Universal Transaction Gateway environment.</p>
+          <ShieldCheck className="w-16 h-16 text-defi-emerald mx-auto mb-4 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
+          <h1 className="text-3xl font-extrabold mb-2 text-white">Protocol Configuration</h1>
+          <p className="text-defi-muted font-mono text-sm">Set up your Smart Contract parameters.</p>
         </div>
 
         {/* Progress Bar */}
         <div className="flex items-center justify-between mb-12 relative px-4">
-          <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-1 bg-gray-100 rounded-full z-0"></div>
-          <div className={`absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-amber-500 rounded-full z-0 transition-all duration-500`} style={{ width: `calc(${((step - 1) / 4) * 100}% - 2rem)` }}></div>
+          <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-1 bg-defi-dark rounded-full z-0 border border-defi-border"></div>
+          <div className={`absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-defi-emerald rounded-full z-0 transition-all duration-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]`} style={{ width: `calc(${((step - 1) / 4) * 100}% - 2rem)` }}></div>
           
           {steps.map((s) => (
             <div key={s.num} className="flex flex-col items-center relative z-10">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-colors ${step >= s.num ? 'bg-amber-500 text-white shadow-lg' : 'bg-gray-200 text-gray-400'}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold transition-all ${step >= s.num ? 'bg-defi-emerald text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-defi-dark text-defi-muted border border-defi-border'}`}>
                 {step > s.num ? <CheckCircle className="w-6 h-6" /> : s.num}
               </div>
-              <span className={`text-xs mt-2 font-semibold absolute -bottom-6 whitespace-nowrap ${step >= s.num ? 'text-brand-dark' : 'text-gray-400'}`}>{s.title}</span>
+              <span className={`text-xs mt-2 font-mono absolute -bottom-6 whitespace-nowrap ${step >= s.num ? 'text-gray-300' : 'text-defi-muted'}`}>{s.title}</span>
             </div>
           ))}
         </div>
 
         <div className="min-h-[350px] mt-8">
-          {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 mb-6">{error}</div>}
+          {error && <div className="p-3 bg-red-900/30 text-red-400 text-sm rounded-lg border border-red-500/50 mb-6 font-mono">{error}</div>}
 
           {/* STEP 1: WALLET */}
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col items-center justify-center text-center">
-              <div className="p-4 bg-brand-gold/20 text-yellow-800 rounded-full mb-6">
+              <div className="p-4 bg-defi-accent/20 text-defi-accent rounded-full mb-6 border border-defi-accent/30 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
                 <Wallet className="w-10 h-10" />
               </div>
-              <h2 className="text-2xl font-bold mb-4">Link Your Vault Wallet</h2>
-              <p className="text-brand-muted mb-8 font-medium">
+              <h2 className="text-2xl font-bold mb-4 text-white">Link Your Vault Wallet</h2>
+              <p className="text-defi-muted mb-8 font-mono text-sm">
                 Connect the Web3 wallet that will act as the master signer for your AI agent transactions.
               </p>
               
@@ -117,8 +118,8 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
               </div>
 
               {walletLinked && (
-                <p className="mt-6 text-sm text-green-600 font-bold animate-pulse flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" /> Wallet Connected! Moving to next step...
+                <p className="mt-6 text-sm text-defi-emerald font-mono animate-pulse flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" /> Web3 Handshake Complete...
                 </p>
               )}
             </div>
@@ -128,12 +129,12 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
           {step === 2 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="flex items-center space-x-4 mb-6">
-                <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                <div className="p-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl shadow-[0_0_10px_rgba(59,130,246,0.2)]">
                   <Box className="w-6 h-6" />
                 </div>
-                <h2 className="text-2xl font-bold">Select AI Framework</h2>
+                <h2 className="text-2xl font-bold text-white">Select AI Engine</h2>
               </div>
-              <p className="text-brand-muted mb-8 font-medium">
+              <p className="text-defi-muted mb-8 font-mono text-sm">
                 Which AI framework are you using to build your autonomous agents?
               </p>
               
@@ -142,7 +143,7 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
                   <button 
                     key={fw}
                     onClick={() => setFramework(fw)}
-                    className={`p-4 rounded-xl border-2 text-left font-bold transition-all ${framework === fw ? 'border-brand-gold bg-amber-50 text-brand-dark' : 'border-gray-200 text-gray-500 hover:border-brand-gold hover:bg-gray-50'}`}
+                    className={`p-4 rounded-xl border-2 text-left font-mono text-sm transition-all ${framework === fw ? 'border-defi-accent bg-defi-accent/10 text-white shadow-[0_0_10px_rgba(139,92,246,0.2)]' : 'border-defi-border text-defi-muted hover:border-defi-accent/50 hover:bg-defi-dark'}`}
                   >
                     {fw}
                   </button>
@@ -152,48 +153,48 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
               <button 
                 onClick={() => setStep(3)}
                 disabled={!framework}
-                className="w-full bg-brand-dark text-white py-4 rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center space-x-2 disabled:opacity-70"
+                className="w-full bg-defi-accent text-white py-4 rounded-xl font-bold hover:bg-violet-600 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 shadow-[0_0_15px_rgba(139,92,246,0.3)]"
               >
-                <span>Continue</span>
+                <span>Initialize Engine</span>
                 <ArrowRight className="w-5 h-5" />
               </button>
             </div>
           )}
 
-          {/* STEP 3: SAFETY SANDWICH */}
+          {/* STEP 3: SAFETY LIMITS */}
           {step === 3 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="flex items-center space-x-4 mb-6">
-                <div className="p-3 bg-red-50 text-red-600 rounded-xl">
+                <div className="p-3 bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl shadow-[0_0_10px_rgba(239,68,68,0.2)]">
                   <ShieldCheck className="w-6 h-6" />
                 </div>
-                <h2 className="text-2xl font-bold">Safety Sandwich Limits</h2>
+                <h2 className="text-2xl font-bold text-white">Smart Contract Guardrails</h2>
               </div>
-              <p className="text-brand-muted mb-8 font-medium">
-                Set a daily transaction limit for your agents. Any transaction exceeding this limit will be paused and sent to your email for manual Human-In-The-Loop approval.
+              <p className="text-defi-muted mb-8 font-mono text-sm">
+                Set a daily transaction limit for your agents. Any transaction intent exceeding this limit will be paused on-chain and require manual Human-In-The-Loop cryptographic signature.
               </p>
               
               <div className="mb-8">
-                <label className="block text-sm font-bold text-gray-700 mb-2">Daily Automated Limit (USD)</label>
+                <label className="block text-xs font-mono text-defi-muted mb-2 uppercase tracking-wider">Daily Automated Limit (USD)</label>
                 <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-defi-muted font-mono">$</span>
                   <input 
                     type="number" 
                     value={safetyLimit}
                     onChange={(e) => setSafetyLimit(e.target.value)}
-                    className="w-full pl-8 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-gold outline-none font-bold text-xl text-brand-dark"
+                    className="w-full pl-8 pr-4 py-4 bg-defi-dark border border-defi-border rounded-xl focus:ring-1 focus:ring-defi-accent outline-none font-mono text-xl text-white"
                   />
                 </div>
               </div>
 
               <div className="flex space-x-4">
-                <button onClick={() => setStep(2)} className="w-1/3 bg-gray-100 text-gray-600 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all">Back</button>
+                <button onClick={() => setStep(2)} className="w-1/3 bg-defi-dark border border-defi-border text-gray-400 py-4 rounded-xl font-mono text-sm hover:bg-defi-surfaceHover transition-all">Back</button>
                 <button 
                   onClick={() => setStep(4)}
                   disabled={!safetyLimit || Number(safetyLimit) < 0}
-                  className="w-2/3 bg-brand-dark text-white py-4 rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center space-x-2 disabled:opacity-70"
+                  className="w-2/3 bg-defi-accent text-white py-4 rounded-xl font-bold hover:bg-violet-600 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 shadow-[0_0_15px_rgba(139,92,246,0.3)]"
                 >
-                  <span>Continue</span>
+                  <span>Set Guardrails</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
@@ -204,12 +205,12 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
           {step === 4 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="flex items-center space-x-4 mb-6">
-                <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+                <div className="p-3 bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30 rounded-xl shadow-[0_0_10px_rgba(217,70,239,0.2)]">
                   <Network className="w-6 h-6" />
                 </div>
-                <h2 className="text-2xl font-bold">Authorized Networks</h2>
+                <h2 className="text-2xl font-bold text-white">Supported L2s & Chains</h2>
               </div>
-              <p className="text-brand-muted mb-8 font-medium">
+              <p className="text-defi-muted mb-8 font-mono text-sm">
                 Select the blockchain networks your agents are allowed to interact with.
               </p>
               
@@ -218,22 +219,22 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
                   <button 
                     key={net}
                     onClick={() => toggleNetwork(net)}
-                    className={`p-4 rounded-xl border-2 text-left font-bold transition-all flex items-center justify-between ${networks.includes(net) ? 'border-brand-gold bg-amber-50 text-brand-dark' : 'border-gray-200 text-gray-500 hover:border-brand-gold hover:bg-gray-50'}`}
+                    className={`p-4 rounded-xl border-2 text-left font-mono text-sm transition-all flex items-center justify-between ${networks.includes(net) ? 'border-defi-accent bg-defi-accent/10 text-white shadow-[0_0_10px_rgba(139,92,246,0.2)]' : 'border-defi-border text-defi-muted hover:border-defi-accent/50 hover:bg-defi-dark'}`}
                   >
                     {net}
-                    {networks.includes(net) && <CheckCircle className="w-5 h-5 text-amber-500" />}
+                    {networks.includes(net) && <CheckCircle className="w-5 h-5 text-defi-accent drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]" />}
                   </button>
                 ))}
               </div>
 
               <div className="flex space-x-4">
-                <button onClick={() => setStep(3)} className="w-1/3 bg-gray-100 text-gray-600 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all">Back</button>
+                <button onClick={() => setStep(3)} className="w-1/3 bg-defi-dark border border-defi-border text-gray-400 py-4 rounded-xl font-mono text-sm hover:bg-defi-surfaceHover transition-all">Back</button>
                 <button 
                   onClick={() => setStep(5)}
                   disabled={networks.length === 0}
-                  className="w-2/3 bg-brand-dark text-white py-4 rounded-xl font-bold hover:bg-black transition-all flex items-center justify-center space-x-2 disabled:opacity-70"
+                  className="w-2/3 bg-defi-accent text-white py-4 rounded-xl font-bold hover:bg-violet-600 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 shadow-[0_0_15px_rgba(139,92,246,0.3)]"
                 >
-                  <span>Continue</span>
+                  <span>Select Networks</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>
@@ -243,30 +244,30 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
           {/* STEP 5: BILLING */}
           {step === 5 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500 text-center">
-              <div className="p-4 bg-green-50 text-green-600 rounded-full inline-flex mb-6">
+              <div className="p-4 bg-defi-emerald/20 text-defi-emerald border border-defi-emerald/30 rounded-full inline-flex mb-6 shadow-[0_0_15px_rgba(16,185,129,0.2)]">
                 <CreditCard className="w-10 h-10" />
               </div>
-              <h2 className="text-2xl font-bold mb-4">Pay-As-You-Go Billing</h2>
-              <p className="text-brand-muted mb-8 font-medium">
-                Aima UTG uses a decentralized Pay-As-You-Go model. You will only be charged a small percentage fee (the spread) on successful API transactions executed by your agents.
+              <h2 className="text-2xl font-bold mb-4 text-white">Smart Contract Gas & Spread</h2>
+              <p className="text-defi-muted mb-8 font-mono text-sm">
+                Aima Protocol uses a decentralized Pay-As-You-Go model. You will only be charged a small percentage fee (the spread) on successful on-chain transactions executed by your agents.
               </p>
               
-              <div className="bg-gray-50 p-6 rounded-xl border border-gray-200 mb-8 text-left">
-                <ul className="space-y-3 font-medium text-brand-dark">
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /> No monthly subscription fees.</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /> Fees are automatically deducted on-chain.</li>
-                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /> Full analytics available in your dashboard.</li>
+              <div className="bg-defi-dark p-6 rounded-xl border border-defi-border mb-8 text-left">
+                <ul className="space-y-3 font-mono text-sm text-gray-300">
+                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-defi-emerald" /> No monthly subscription fees.</li>
+                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-defi-emerald" /> Fees are settled automatically via the UTG Router Contract.</li>
+                  <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-defi-emerald" /> Full execution trace available in your Terminal.</li>
                 </ul>
               </div>
 
               <div className="flex space-x-4">
-                <button onClick={() => setStep(4)} disabled={isLoading} className="w-1/3 bg-gray-100 text-gray-600 py-4 rounded-xl font-bold hover:bg-gray-200 transition-all">Back</button>
+                <button onClick={() => setStep(4)} disabled={isLoading} className="w-1/3 bg-defi-dark border border-defi-border text-gray-400 py-4 rounded-xl font-mono text-sm hover:bg-defi-surfaceHover transition-all">Back</button>
                 <button 
                   onClick={finalizeOnboarding}
                   disabled={isLoading}
-                  className="w-2/3 bg-brand-gold text-yellow-900 py-4 rounded-xl font-extrabold hover:bg-amber-500 transition-all flex items-center justify-center space-x-2 disabled:opacity-70"
+                  className="w-2/3 bg-defi-emerald text-white py-4 rounded-xl font-bold hover:bg-emerald-500 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 shadow-[0_0_15px_rgba(16,185,129,0.3)]"
                 >
-                  <span>{isLoading ? 'Finalizing...' : 'Enter Dashboard'}</span>
+                  <span>{isLoading ? 'Finalizing...' : 'Launch Protocol Interface'}</span>
                   {!isLoading && <ArrowRight className="w-5 h-5" />}
                 </button>
               </div>
