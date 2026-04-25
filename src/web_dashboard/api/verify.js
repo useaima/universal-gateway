@@ -32,6 +32,10 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     
+    if (data.error) {
+      return res.status(400).json({ success: false, error: `Google API Error: ${data.error.message}` });
+    }
+    
     // Check if verification was successful and token is valid
     if (data.tokenProperties && data.tokenProperties.valid) {
       // Score is between 0.0 and 1.0 (1.0 is very likely a good interaction)
