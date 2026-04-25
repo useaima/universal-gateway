@@ -29,33 +29,36 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
       
       {/* Top Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4">
-          <div className="p-4 bg-green-50 text-green-600 rounded-xl">
+        <div className="bg-defi-surface p-6 rounded-2xl border border-defi-border shadow-[0_0_20px_rgba(139,92,246,0.1)] flex items-center space-x-4 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-defi-emerald/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+          <div className="p-4 bg-defi-emerald/20 text-defi-emerald rounded-xl drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">
             <TrendingUp className="w-6 h-6" />
           </div>
-          <div>
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">30-Day Volume</p>
-            <h3 className="text-2xl font-black text-brand-dark">$12,460.00</h3>
+          <div className="relative z-10">
+            <p className="text-sm font-mono text-defi-muted uppercase tracking-wider">30-Day Volume</p>
+            <h3 className="text-2xl font-black text-white">$12,460.00</h3>
           </div>
         </div>
         
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4">
-          <div className="p-4 bg-blue-50 text-blue-600 rounded-xl">
+        <div className="bg-defi-surface p-6 rounded-2xl border border-defi-border shadow-[0_0_20px_rgba(139,92,246,0.1)] flex items-center space-x-4 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+          <div className="p-4 bg-blue-500/20 text-blue-400 rounded-xl drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]">
             <Bot className="w-6 h-6" />
           </div>
-          <div>
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Active Agents</p>
-            <h3 className="text-2xl font-black text-brand-dark">3</h3>
+          <div className="relative z-10">
+            <p className="text-sm font-mono text-defi-muted uppercase tracking-wider">Active Agents</p>
+            <h3 className="text-2xl font-black text-white">3</h3>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center space-x-4">
-          <div className="p-4 bg-red-50 text-red-600 rounded-xl">
+        <div className="bg-defi-surface p-6 rounded-2xl border border-defi-border shadow-[0_0_20px_rgba(139,92,246,0.1)] flex items-center space-x-4 relative overflow-hidden group">
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
+          <div className="p-4 bg-red-500/20 text-red-400 rounded-xl drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]">
             <ShieldAlert className="w-6 h-6" />
           </div>
-          <div>
-            <p className="text-sm font-bold text-gray-500 uppercase tracking-wider">Pending Approvals</p>
-            <h3 className="text-2xl font-black text-brand-dark">1</h3>
+          <div className="relative z-10">
+            <p className="text-sm font-mono text-defi-muted uppercase tracking-wider">Pending Signatures</p>
+            <h3 className="text-2xl font-black text-white">1</h3>
           </div>
         </div>
       </div>
@@ -64,24 +67,25 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
       <div className="grid lg:grid-cols-3 gap-8">
         
         {/* Chart Area */}
-        <div className="lg:col-span-2 bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+        <div className="lg:col-span-2 bg-defi-surface rounded-3xl p-8 border border-defi-border shadow-[0_0_30px_rgba(139,92,246,0.1)]">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+            <div className="p-3 bg-defi-accent/20 text-defi-accent rounded-xl drop-shadow-[0_0_5px_rgba(139,92,246,0.8)] border border-defi-accent/30">
               <Activity className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-bold">Transaction Volume (USD)</h2>
+            <h2 className="text-xl font-bold text-white">Protocol Throughput (USD)</h2>
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={mockChartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12 }} dx={-10} tickFormatter={(value) => `$${value}`} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12, fontFamily: 'monospace' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12, fontFamily: 'monospace' }} dx={-10} tickFormatter={(value) => `$${value}`} />
                 <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ borderRadius: '12px', border: '1px solid #374151', backgroundColor: '#111827', color: '#fff', fontFamily: 'monospace' }}
+                  itemStyle={{ color: '#fff' }}
                   formatter={(value: number) => [`$${value}`, 'Volume']}
                 />
-                <Line type="monotone" dataKey="volume" stroke="#d97706" strokeWidth={3} dot={{ r: 4, fill: '#d97706', strokeWidth: 2, stroke: '#fff' }} activeDot={{ r: 6 }} />
+                <Line type="monotone" dataKey="volume" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke: '#111827' }} activeDot={{ r: 6, fill: '#a78bfa' }} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -89,42 +93,43 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
 
         {/* API Key & Code */}
         <div className="space-y-8">
-          <section className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg">
+          <section className="bg-defi-surface rounded-3xl p-6 border border-defi-border shadow-[0_0_20px_rgba(139,92,246,0.1)] relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-defi-accent/5 to-transparent pointer-events-none"></div>
+            <div className="flex items-center space-x-3 mb-4 relative z-10">
+              <div className="p-2 bg-defi-accent/20 text-defi-accent rounded-lg border border-defi-accent/30 drop-shadow-[0_0_5px_rgba(139,92,246,0.8)]">
                 <Key className="w-5 h-5" />
               </div>
-              <h2 className="text-lg font-bold">Gateway Key</h2>
+              <h2 className="text-lg font-bold text-white">Gateway Key</h2>
             </div>
-            <p className="text-gray-500 text-sm mb-4 font-medium">
+            <p className="text-defi-muted text-sm mb-4 font-mono relative z-10">
               Inject this into your agent environment variables. Keep it secret.
             </p>
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-3 font-mono text-xs text-gray-700 overflow-hidden text-ellipsis mb-3">
+            <div className="bg-defi-dark border border-defi-border rounded-xl p-3 font-mono text-xs text-gray-300 overflow-hidden text-ellipsis mb-3 relative z-10 shadow-inner">
               {apiKey}
             </div>
             <button 
               onClick={handleCopy}
-              className="w-full bg-brand-dark text-white py-3 rounded-xl font-bold hover:bg-black transition-colors flex items-center justify-center space-x-2"
+              className="w-full bg-defi-accent text-white py-3 rounded-xl font-bold hover:bg-violet-600 transition-colors flex items-center justify-center space-x-2 relative z-10 shadow-[0_0_15px_rgba(139,92,246,0.3)]"
             >
-              {copied ? <span className="text-green-400">Copied!</span> : <><Copy className="w-4 h-4" /><span>Copy Key</span></>}
+              {copied ? <span className="text-emerald-400">Copied!</span> : <><Copy className="w-4 h-4" /><span>Copy Key</span></>}
             </button>
           </section>
 
-          <section className="bg-brand-dark rounded-3xl p-6 shadow-xl text-white">
+          <section className="bg-[#0d1117] border border-[#30363d] rounded-3xl p-6 shadow-xl text-white">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-gray-800 text-brand-gold rounded-lg">
+              <div className="p-2 bg-[#161b22] text-[#8b949e] border border-[#30363d] rounded-lg">
                 <Code className="w-5 h-5" />
               </div>
               <h2 className="text-lg font-bold text-white">Quick Start</h2>
             </div>
-            <div className="bg-[#0D1117] rounded-xl p-4 border border-gray-800 font-mono text-xs text-gray-300 overflow-x-auto">
+            <div className="bg-[#161b22] rounded-xl p-4 border border-[#30363d] font-mono text-xs text-[#c9d1d9] overflow-x-auto shadow-inner">
               <pre>
                 <code>
-<span className="text-pink-400">import</span> {'{'} UTGClient {'}'} <span className="text-pink-400">from</span> <span className="text-green-300">'@useaima/sdk'</span>;{'\n\n'}
-<span className="text-pink-400">const</span> client = <span className="text-pink-400">new</span> UTGClient({'{'}{'\n'}
+<span className="text-[#ff7b72]">import</span> {'{'} UTGClient {'}'} <span className="text-[#ff7b72]">from</span> <span className="text-[#a5d6ff]">'@aima/protocol-sdk'</span>;{'\n\n'}
+<span className="text-[#ff7b72]">const</span> client = <span className="text-[#ff7b72]">new</span> UTGClient({'{'}{'\n'}
 {'  '}apiKey: process.env.API_KEY,{'\n'}
 {'}'});{'\n\n'}
-<span className="text-pink-400">await</span> client.execute(intent);
+<span className="text-[#ff7b72]">await</span> client.execute(intent);
                 </code>
               </pre>
             </div>
