@@ -1,13 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   body {
-    @apply bg-brand-cream text-brand-dark antialiased;
+    @apply bg-defi-dark text-gray-100 antialiased font-sans;
   }
 }
 
 .glass-panel {
-  @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl;
+  @apply bg-defi-surface/40 backdrop-blur-md border border-defi-border shadow-[0_0_15px_rgba(139,92,246,0.1)] rounded-2xl;
 }
