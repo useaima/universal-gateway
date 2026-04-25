@@ -66,12 +66,28 @@ export default function RegistrationFlow({ onRegistrationComplete }: Registratio
     // 1. Execute Enterprise reCAPTCHA (as requested by user)
     const token = await executeEnterpriseRecaptcha('register');
     if (!token) {
-      // We will proceed for demo purposes even if token fails to load locally, 
-      // but in production, you would block here or send token to backend.
       console.log("No enterprise token generated, proceeding with Firebase Auth.");
     } else {
       console.log("Enterprise Token generated:", token);
-      // In a real app, send `token` to your backend to verify BEFORE creating the user.
+      
+      // Verify token on the backend
+      try {
+        const verifyRes = await fetch('/api/verify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, action: 'register' })
+        });
+        
+        const verifyData = await verifyRes.json();
+        if (!verifyRes.ok || !verifyData.success) {
+          throw new Error(verifyData.error || "reCAPTCHA verification failed. Risk score too low.");
+        }
+        console.log("reCAPTCHA Verification Success:", verifyData);
+      } catch (err: any) {
+        setError(err.message);
+        setIsLoading(false);
+        return; // Block registration
+      }
     }
 
     try {
