@@ -26,7 +26,7 @@ export default function Dashboard({ onLogout, userEmail }: DashboardProps) {
   ] as const;
 
   return (
-    <div className="page-shell min-h-screen text-gray-200">
+    <div className="dark-shell min-h-screen text-gray-200">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-72 border-r border-defi-border bg-[rgba(10,13,18,0.86)] px-5 py-6 backdrop-blur-xl xl:flex xl:flex-col">
         <div className="flex items-center space-x-3 border-b border-defi-border pb-6">
           <img src="/logo.png" alt="Aima Logo" className="h-10 w-10 rounded-full border border-defi-border bg-white/5 p-1.5 object-contain" />

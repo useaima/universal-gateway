@@ -43,13 +43,23 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
     setError(null);
     try {
       if (auth.currentUser && address) {
-        await setDoc(doc(db, "users", auth.currentUser.uid), {
+        const onboardingPayload: Record<string, unknown> = {
           walletAddress: address,
           agentFramework: framework,
           dailySafetyLimit: Number(safetyLimit),
           authorizedNetworks: networks,
           onboardedAt: new Date().toISOString(),
+          onboardingCompletedAt: new Date().toISOString(),
           billingModel: "pay-as-you-go"
+        };
+
+        if (auth.currentUser.phoneNumber) {
+          onboardingPayload.phoneNumber = auth.currentUser.phoneNumber;
+          onboardingPayload.phoneVerifiedAt = new Date().toISOString();
+        }
+
+        await setDoc(doc(db, "users", auth.currentUser.uid), {
+          ...onboardingPayload
         }, { merge: true });
         
         setIsLoading(false);
@@ -73,7 +83,7 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
   ];
 
   return (
-    <div className="page-shell flex min-h-screen items-center justify-center px-4 py-12 text-gray-200 font-sans">
+    <div className="dark-shell flex min-h-screen items-center justify-center px-4 py-12 text-gray-200 font-sans">
       <div className="section-panel max-w-2xl w-full p-10">
         
         <div className="text-center mb-10">

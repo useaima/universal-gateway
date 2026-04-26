@@ -133,8 +133,16 @@ class DeFiEthSkill(SkillBase):
             
             # Finalize Statement
             self.audit_logger.log_signed_entry(user_id, "ETH_TRANSFER", {
+                "transaction_id": sig_hash,
+                "agent": "ETH Transfer Runtime",
+                "network": "Ethereum",
                 "to": to_addr,
                 "amount": amount,
+                "gas": "21000",
+                "contract": "",
+                "reasoning": "Gateway execution wrapper verified the transfer lifecycle and marked the settlement as complete.",
+                "requested_action": f"Transfer {amount} ETH to {to_addr}",
+                "policy_rule": "Published from the gateway settlement log.",
                 "tx_hash": final_hash_hex,
                 "status": "SETTLED"
             })
@@ -144,4 +152,3 @@ class DeFiEthSkill(SkillBase):
         res = await wrapper.execute_task("ETH_TRANSFER", step_logic, initial_quote=amount, transaction_id=sig_hash)
         
         return [types.TextContent(type="text", text=str(res))]
-

@@ -1,23 +1,45 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Key, Copy, Activity, Code, TrendingUp, ShieldAlert, Bot, Zap } from 'lucide-react';
-import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { onValue, ref } from 'firebase/database';
+import { rtdb } from '../../lib/firebase';
+import { emptySummary, mapSummaryRecord, mapThroughputRecord, type LiveSummary, type ThroughputPoint } from '../../lib/liveDashboard';
 
 interface OverviewViewProps {
   apiKey: string;
 }
 
-const mockChartData = [
-  { date: 'Apr 01', volume: 400 },
-  { date: 'Apr 05', volume: 3000 },
-  { date: 'Apr 10', volume: 2000 },
-  { date: 'Apr 15', volume: 2780 },
-  { date: 'Apr 20', volume: 1890 },
-  { date: 'Apr 24', volume: 2390 },
-];
-
 export default function OverviewView({ apiKey }: OverviewViewProps) {
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [summary, setSummary] = useState<LiveSummary>(emptySummary);
+  const [throughput, setThroughput] = useState<ThroughputPoint[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const summaryRef = ref(rtdb, 'dashboard_live/summary');
+    const throughputRef = ref(rtdb, 'dashboard_live/throughput_30d');
+
+    const stopSummary = onValue(summaryRef, (snapshot) => {
+      setSummary(mapSummaryRecord(snapshot.val()));
+      setIsLoading(false);
+    });
+
+    const stopThroughput = onValue(throughputRef, (snapshot) => {
+      setThroughput(mapThroughputRecord(snapshot.val()));
+      setIsLoading(false);
+    });
+
+    return () => {
+      stopSummary();
+      stopThroughput();
+    };
+  }, []);
+
+  const chartData = useMemo(
+    () => (throughput.length > 0 ? throughput : [{ date: 'No data', volume: 0, count: 0 }]),
+    [throughput],
+  );
 
   const handleCopy = () => {
     navigator.clipboard.writeText(apiKey);
@@ -27,7 +49,7 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
         <div className="metric-card relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_42%)]" />
           <div className="relative z-10 flex items-center space-x-4">
@@ -36,8 +58,10 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
             </div>
             <div>
               <p className="text-sm font-mono uppercase tracking-wider text-defi-muted">30-Day Volume</p>
-              <h3 className="text-2xl font-semibold text-white">$12,460.00</h3>
-              <p className="mt-1 text-xs font-mono text-defi-emerald">+18.4% vs prior window</p>
+              {isLoading ? <div className="skeleton-bar mt-3 h-8 w-28" /> : <h3 className="text-2xl font-semibold text-white">${summary.thirtyDayVolumeUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}</h3>}
+              <p className="mt-1 text-xs font-mono text-defi-emerald">
+                {summary.lastSyncedAt ? `Synced ${new Date(summary.lastSyncedAt).toLocaleTimeString()}` : 'Live from RTDB'}
+              </p>
             </div>
           </div>
         </div>
@@ -50,8 +74,8 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
             </div>
             <div>
               <p className="text-sm font-mono uppercase tracking-wider text-defi-muted">Active Agents</p>
-              <h3 className="text-2xl font-semibold text-white">3</h3>
-              <p className="mt-1 text-xs font-mono text-defi-muted">Treasury, arbitrage, yield</p>
+              {isLoading ? <div className="skeleton-bar mt-3 h-8 w-12" /> : <h3 className="text-2xl font-semibold text-white">{summary.activeAgents}</h3>}
+              <p className="mt-1 text-xs font-mono text-defi-muted">Derived from gateway transaction publishers</p>
             </div>
           </div>
         </div>
@@ -64,8 +88,8 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
             </div>
             <div>
               <p className="text-sm font-mono uppercase tracking-wider text-defi-muted">Pending Signatures</p>
-              <h3 className="text-2xl font-semibold text-white">1</h3>
-              <p className="mt-1 text-xs font-mono text-defi-amber">1 request awaiting manual review</p>
+              {isLoading ? <div className="skeleton-bar mt-3 h-8 w-12" /> : <h3 className="text-2xl font-semibold text-white">{summary.pendingSignatures}</h3>}
+              <p className="mt-1 text-xs font-mono text-defi-amber">Awaiting human review or signature shares</p>
             </div>
           </div>
         </div>
@@ -79,26 +103,26 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
             <div>
               <p className="text-sm font-mono uppercase tracking-wider text-defi-muted">Network Gas</p>
               <h3 className="text-2xl font-semibold text-white">14 gwei</h3>
-              <p className="mt-1 text-xs font-mono text-defi-muted">Monitored across enabled networks</p>
+              <p className="mt-1 text-xs font-mono text-defi-muted">Displayed locally while live gas feeds remain unchanged</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <div className="section-panel lg:col-span-2 p-8">
-          <div className="flex items-center space-x-3 mb-6">
+      <div className="grid gap-8 lg:grid-cols-3">
+        <div className="section-panel p-8 lg:col-span-2">
+          <div className="mb-6 flex items-center space-x-3">
             <div className="rounded-xl border border-defi-gold/30 bg-defi-gold/10 p-3 text-defi-goldBright">
               <Activity className="h-6 w-6" />
             </div>
             <div>
               <h2 className="text-xl font-semibold text-white">Protocol Throughput</h2>
-              <p className="text-sm text-defi-muted">Volume, execution cadence, and recent directional movement.</p>
+              <p className="text-sm text-defi-muted">Transaction volume and completed execution counts streamed from Firebase Realtime Database.</p>
             </div>
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={mockChartData}>
+              <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id="goldArea" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#f1cc7a" stopOpacity={0.34} />
@@ -111,7 +135,7 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
                 <Tooltip
                   contentStyle={{ borderRadius: '16px', border: '1px solid rgba(215,196,165,0.18)', backgroundColor: '#12161d', color: '#fff', fontFamily: 'JetBrains Mono, monospace' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => [`$${value}`, 'Volume']}
+                  formatter={(value: number, name: string) => [name === 'volume' ? `$${value}` : value, name === 'volume' ? 'Volume' : 'Completed']}
                 />
                 <Area type="monotone" dataKey="volume" stroke="none" fill="url(#goldArea)" />
                 <Line type="monotone" dataKey="volume" stroke="#f1cc7a" strokeWidth={3} dot={{ r: 4, fill: '#f1cc7a', strokeWidth: 2, stroke: '#111827' }} activeDot={{ r: 6, fill: '#fff1cf' }} />
@@ -122,7 +146,7 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
 
         <div className="space-y-8">
           <section className="section-panel relative overflow-hidden p-6">
-            <div className="flex items-center space-x-3 mb-4 relative z-10">
+            <div className="relative z-10 mb-4 flex items-center space-x-3">
               <div className="rounded-lg border border-defi-gold/30 bg-defi-gold/10 p-2 text-defi-goldBright">
                 <Key className="h-5 w-5" />
               </div>
@@ -143,10 +167,7 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
             >
               {revealed ? 'Hide key' : 'Reveal key'}
             </button>
-            <button
-              onClick={handleCopy}
-              className="button-primary w-full justify-center"
-            >
+            <button onClick={handleCopy} className="button-primary w-full justify-center">
               {copied ? <span className="text-emerald-950">Copied!</span> : <><Copy className="h-4 w-4" /><span>Copy Key</span></>}
             </button>
           </section>

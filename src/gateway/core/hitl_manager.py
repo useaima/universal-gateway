@@ -4,6 +4,7 @@ import os
 import json
 import sys
 from typing import List
+from core.firebase_live_publisher import get_live_publisher
 
 class HITLManager:
     """
@@ -18,6 +19,7 @@ class HITLManager:
             
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self.db_path = db_path
+        self.live_publisher = get_live_publisher()
         self._init_db()
 
     def _init_db(self):
@@ -67,6 +69,7 @@ class HITLManager:
                 (transaction_id, url, details, amount, "PENDING_SIGNATURES", json.dumps(required_signatures))
             )
             conn.commit()
+        self.live_publisher.sync_all()
         return transaction_id
 
     def get_status(self, transaction_id: str) -> str:
@@ -108,6 +111,8 @@ class HITLManager:
                 conn.commit()
             except sqlite3.IntegrityError:
                 pass # Already approved by this person
+
+        self.live_publisher.sync_all()
         
         # Trigger status check to see if we reached consensus
         return self.get_status(transaction_id)
@@ -119,3 +124,4 @@ class HITLManager:
         with sqlite3.connect(self.db_path) as conn:
             conn.execute("UPDATE pending_transactions SET status = ? WHERE id = ?", (status, transaction_id))
             conn.commit()
+        self.live_publisher.sync_all()

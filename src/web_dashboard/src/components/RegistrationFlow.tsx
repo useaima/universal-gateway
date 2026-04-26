@@ -1,272 +1,499 @@
-import { useState, useEffect } from 'react';
-import { User as UserIcon, Mail, Lock, ArrowRight, Phone, ShieldCheck, CheckCircle } from 'lucide-react';
-import { auth, db, setupRecaptcha } from '../lib/firebase';
-import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile, signInWithPhoneNumber, PhoneAuthProvider, linkWithCredential } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { useMemo, useState } from 'react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle2,
+  Lock,
+  Mail,
+  Phone,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
+import {
+  EmailAuthProvider,
+  PhoneAuthProvider,
+  createUserWithEmailAndPassword,
+  fetchSignInMethodsForEmail,
+  linkWithCredential,
+  sendEmailVerification,
+  signInWithEmailAndPassword,
+  signInWithPhoneNumber,
+  signInWithPopup,
+  signOut,
+  type User,
+} from 'firebase/auth';
+import { auth, getEmailActionSettings, googleProvider, setupRecaptcha, verifyEnterpriseRecaptcha } from '../lib/firebase';
+import { mergeUserProgress, type UserProgress } from '../lib/userProgress';
+import welcomeVisual from '../assets/welcome-visual.svg';
+
+type RegistrationView = 'welcome' | 'email_verification' | 'phone_verification';
 
 interface RegistrationFlowProps {
-  onRegistrationComplete: (email: string) => void;
+  view: RegistrationView;
+  user: User | null;
+  userProgress: UserProgress | null;
+  emailActionNotice: string | null;
+  emailActionError: string | null;
+  onBackToLanding: () => void;
+  onProgressChange: () => Promise<void> | void;
 }
 
-type EnterpriseGrecaptcha = {
-  enterprise?: {
-    ready: (callback: () => void) => void;
-    execute: (siteKey: string, options: { action: string }) => Promise<string>;
-  };
-};
+const PENDING_EMAIL_STORAGE_KEY = 'utg-pending-email';
 
 function getErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : 'Something went wrong.';
 }
 
-export default function RegistrationFlow({ onRegistrationComplete }: RegistrationFlowProps) {
-  const [step, setStep] = useState(1);
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
+function GoogleMark() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5">
+      <path fill="#4285F4" d="M21.6 12.227c0-.82-.073-1.606-.209-2.364H12v4.473h5.382a4.605 4.605 0 0 1-2 3.02v2.506h3.237c1.894-1.744 2.981-4.315 2.981-7.635Z" />
+      <path fill="#34A853" d="M12 22c2.7 0 4.964-.895 6.618-2.429l-3.237-2.506c-.895.6-2.04.956-3.381.956-2.598 0-4.799-1.754-5.584-4.11H3.07v2.58A9.998 9.998 0 0 0 12 22Z" />
+      <path fill="#FBBC05" d="M6.416 13.911A5.992 5.992 0 0 1 6.104 12c0-.664.114-1.307.312-1.911V7.509H3.07A9.998 9.998 0 0 0 2 12c0 1.611.386 3.135 1.07 4.491l3.346-2.58Z" />
+      <path fill="#EA4335" d="M12 5.979c1.469 0 2.788.505 3.827 1.498l2.872-2.872C16.96 2.986 14.696 2 12 2A9.998 9.998 0 0 0 3.07 7.509l3.346 2.58C7.201 7.733 9.402 5.979 12 5.979Z" />
+    </svg>
+  );
+}
+
+export default function RegistrationFlow({
+  view,
+  user,
+  userProgress,
+  emailActionNotice,
+  emailActionError,
+  onBackToLanding,
+  onProgressChange,
+}: RegistrationFlowProps) {
+  const [email, setEmail] = useState(user?.email || localStorage.getItem(PENDING_EMAIL_STORAGE_KEY) || '');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(user?.phoneNumber || userProgress?.phoneNumber || '');
   const [otp, setOtp] = useState('');
-  
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [verificationId, setVerificationId] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
-  // Step 2: Polling for email verification
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (step === 2 && auth.currentUser) {
-      interval = setInterval(async () => {
-        await auth.currentUser?.reload();
-        if (auth.currentUser?.emailVerified) {
-          setStep(3); // Move to Phone Verification
-          clearInterval(interval);
-        }
-      }, 3000);
-    }
-    return () => clearInterval(interval);
-  }, [step]);
+  const currentEmail = useMemo(
+    () => user?.email || userProgress?.email || localStorage.getItem(PENDING_EMAIL_STORAGE_KEY) || email,
+    [email, user?.email, userProgress?.email],
+  );
 
-  // Utility to handle Enterprise reCAPTCHA
-  const executeEnterpriseRecaptcha = async (action: string): Promise<string | null> => {
-    return new Promise((resolve) => {
-      const grecaptcha = (window as Window & { grecaptcha?: EnterpriseGrecaptcha }).grecaptcha;
-      if (grecaptcha?.enterprise) {
-        grecaptcha.enterprise.ready(async () => {
-          try {
-            const token = await grecaptcha.enterprise.execute('6LeDEsgsAAAAAHglydox2_TQEPUDR0k6ZFm8ILUy', { action });
-            resolve(token);
-          } catch (e) {
-            console.error("Enterprise reCAPTCHA failed", e);
-            resolve(null);
-          }
-        });
-      } else {
-        console.warn("Enterprise reCAPTCHA not loaded");
-        resolve(null);
-      }
-    });
+  const syncAppState = async () => {
+    setError(null);
+    await onProgressChange();
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const handleEmailAuth = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
-
-    // 1. Execute Enterprise reCAPTCHA (as requested by user)
-    const token = await executeEnterpriseRecaptcha('register');
-    if (!token) {
-      console.log("No enterprise token generated, proceeding with Firebase Auth.");
-    } else {
-      console.log("Enterprise Token generated:", token);
-      
-      // Verify token on the backend
-      try {
-        const verifyRes = await fetch('/api/verify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, action: 'register' })
-        });
-        
-        const verifyData = await verifyRes.json();
-        if (!verifyRes.ok || !verifyData.success) {
-          throw new Error(verifyData.error || "reCAPTCHA verification failed. Risk score too low.");
-        }
-        console.log("reCAPTCHA Verification Success:", verifyData);
-      } catch (err: unknown) {
-        setError(getErrorMessage(err));
-        setIsLoading(false);
-        return; // Block registration
-      }
-    }
+    setInfo(null);
+    setIsLoading(true);
 
     try {
-      // 2. Create Firebase User
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // 3. Update Profile with Full Name
-      await updateProfile(userCredential.user, { displayName: fullName });
-      
-      // 4. Save initial user record to Firestore
-      await setDoc(doc(db, "users", userCredential.user.uid), {
-        fullName,
-        email,
-        createdAt: new Date().toISOString()
-      }, { merge: true });
+      await verifyEnterpriseRecaptcha('auth_email_submit');
 
-      // 5. Send Verification Email & Magic Link
-      await sendEmailVerification(userCredential.user);
-      
-      setStep(2); // Move to Email Verification Check
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
+      const methods = await fetchSignInMethodsForEmail(auth, email.trim());
+      const isPasswordAccount = methods.includes(EmailAuthProvider.EMAIL_PASSWORD_SIGN_IN_METHOD);
+      const isGoogleOnly = methods.length > 0 && !isPasswordAccount;
+
+      if (isGoogleOnly) {
+        throw new Error('This email is already linked to Google sign-in. Continue with Google to resume your account.');
+      }
+
+      const credential = isPasswordAccount
+        ? await signInWithEmailAndPassword(auth, email.trim(), password)
+        : await createUserWithEmailAndPassword(auth, email.trim(), password);
+
+      localStorage.setItem(PENDING_EMAIL_STORAGE_KEY, email.trim());
+
+      await mergeUserProgress(credential.user.uid, {
+        authProvider: isPasswordAccount ? 'password' : 'password',
+        email: credential.user.email || email.trim(),
+        lastLoginAt: new Date().toISOString(),
+      });
+
+      if (!credential.user.emailVerified) {
+        await sendEmailVerification(credential.user, getEmailActionSettings());
+        setInfo(
+          isPasswordAccount
+            ? 'Your account is signed in. We sent a fresh verification link so you can continue securely.'
+            : 'Your account is created. We sent a verification link to continue in the same window.',
+        );
+      }
+
+      await syncAppState();
+    } catch (authError) {
+      setError(getErrorMessage(authError));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSendSMS = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const handleGoogleSignIn = async () => {
     setError(null);
-
-    // 1. Enterprise reCAPTCHA on the button click
-    const token = await executeEnterpriseRecaptcha('send_sms');
-    if (token) console.log("Enterprise Token generated for SMS:", token);
+    setInfo(null);
+    setIsGoogleLoading(true);
 
     try {
-      if (!auth.currentUser) throw new Error("User session lost.");
-      
-      // 2. Firebase's required invisible reCAPTCHA for SMS
+      const credential = await signInWithPopup(auth, googleProvider);
+      localStorage.setItem(PENDING_EMAIL_STORAGE_KEY, credential.user.email || '');
+
+      const googlePayload: Record<string, string> = {
+        authProvider: 'google',
+        email: credential.user.email || '',
+        lastLoginAt: new Date().toISOString(),
+      };
+
+      if (credential.user.emailVerified) {
+        googlePayload.emailVerifiedAt = new Date().toISOString();
+      }
+
+      await mergeUserProgress(credential.user.uid, googlePayload);
+
+      await syncAppState();
+    } catch (googleError) {
+      setError(getErrorMessage(googleError));
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!user) {
+      return;
+    }
+
+    setError(null);
+    setInfo(null);
+    setIsLoading(true);
+
+    try {
+      await sendEmailVerification(user, getEmailActionSettings());
+      setInfo(`We sent a fresh verification link to ${user.email || currentEmail}.`);
+    } catch (verificationError) {
+      setError(getErrorMessage(verificationError));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSendSms = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setError(null);
+    setInfo(null);
+    setIsLoading(true);
+
+    try {
+      if (!auth.currentUser) {
+        throw new Error('Your authenticated session is no longer active. Sign in again to continue.');
+      }
+
+      if (auth.currentUser.phoneNumber && !userProgress?.phoneVerifiedAt) {
+        await mergeUserProgress(auth.currentUser.uid, {
+          phoneNumber: auth.currentUser.phoneNumber,
+          phoneVerifiedAt: new Date().toISOString(),
+        });
+        await syncAppState();
+        return;
+      }
+
+      await verifyEnterpriseRecaptcha('auth_phone_submit');
+
       const recaptchaVerifier = setupRecaptcha('firebase-recaptcha-container');
       const confirmationResult = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
-      
+
       setVerificationId(confirmationResult.verificationId);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
+      setInfo(`We sent a verification code to ${phone}.`);
+    } catch (smsError) {
+      setError(getErrorMessage(smsError));
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+  const handleVerifyOtp = async (event: React.FormEvent) => {
+    event.preventDefault();
     setError(null);
+    setInfo(null);
+    setIsLoading(true);
 
     try {
-      if (!auth.currentUser) throw new Error("User session lost.");
+      if (!auth.currentUser) {
+        throw new Error('Your authenticated session is no longer active. Sign in again to continue.');
+      }
+
       const credential = PhoneAuthProvider.credential(verificationId, otp);
-      await linkWithCredential(auth.currentUser, credential);
-      
-      // Registration and Phone Verification complete!
-      onRegistrationComplete(email);
-    } catch (err: unknown) {
-      setError(getErrorMessage(err));
+      const linked = await linkWithCredential(auth.currentUser, credential);
+
+      await mergeUserProgress(linked.user.uid, {
+        phoneNumber: linked.user.phoneNumber || phone,
+        phoneVerifiedAt: new Date().toISOString(),
+      });
+
+      await syncAppState();
+    } catch (otpError) {
+      if (otpError instanceof Error && otpError.message.includes('provider-already-linked') && auth.currentUser) {
+        await mergeUserProgress(auth.currentUser.uid, {
+          phoneNumber: auth.currentUser.phoneNumber || phone,
+          phoneVerifiedAt: new Date().toISOString(),
+        });
+        await syncAppState();
+      } else {
+        setError(getErrorMessage(otpError));
+      }
+    } finally {
       setIsLoading(false);
     }
   };
 
+  const handleUseAnotherAccount = async () => {
+    localStorage.removeItem(PENDING_EMAIL_STORAGE_KEY);
+    await signOut(auth);
+    onBackToLanding();
+  };
+
+  const heading =
+    view === 'welcome'
+      ? 'Welcome to the Universal Transaction Gateway'
+      : view === 'email_verification'
+        ? 'Verify your email to continue'
+        : 'Verify your phone to unlock onboarding';
+
+  const description =
+    view === 'welcome'
+      ? 'Sign in with Email, Password, or Google. We automatically resume the right step for existing and new users.'
+      : view === 'email_verification'
+        ? 'We sent a Firebase verification link. Open it from the same browser window and we will resume the flow automatically.'
+        : 'Phone verification is required before the existing onboarding wizard can continue.';
+  const infoBanner = info || emailActionNotice;
+
   return (
-    <div className="page-shell min-h-screen flex flex-col font-sans">
-      <header className="px-4 pt-4 md:px-8">
-        <div className="mx-auto flex max-w-7xl items-center rounded-full border border-defi-border bg-[rgba(13,17,23,0.78)] px-5 py-4 backdrop-blur-xl md:px-7">
-          <div className="flex items-center space-x-3">
-            <img src="/logo.png" alt="Aima Logo" className="h-10 w-10 rounded-full border border-defi-border bg-white/5 p-1.5 object-contain" />
+    <div className="auth-shell min-h-screen px-4 py-4 font-sans md:px-8">
+      <header className="mx-auto max-w-7xl">
+        <div className="light-nav flex items-center justify-between px-5 py-4 md:px-7">
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Aima Logo" className="h-10 w-10 rounded-full border border-[#eadfcf] bg-white/80 p-1.5 object-contain" />
             <div>
-              <span className="block text-xl font-semibold text-white">Aima Protocol</span>
-              <span className="text-[11px] font-mono uppercase tracking-[0.22em] text-defi-muted">Identity Enrollment</span>
+              <span className="block text-lg font-semibold text-slate-900 md:text-xl">Aima Protocol</span>
+              <span className="hidden text-[11px] font-mono uppercase tracking-[0.24em] text-[#9a8357] md:block">
+                Universal Transaction Gateway
+              </span>
             </div>
           </div>
+
+          <button type="button" onClick={onBackToLanding} className="light-button-secondary px-4 py-2 text-sm font-mono">
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </button>
         </div>
       </header>
 
-      <main className="flex flex-grow items-center justify-center px-4 py-12">
-        <div className="section-panel relative w-full max-w-md overflow-hidden p-10">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(207,169,93,0.16),transparent_40%)]" />
-          
-          {step === 1 && (
-            <div className="animate-in slide-in-from-right-4 duration-500">
-              <div className="eyebrow mb-5">Secure onboarding</div>
-              <h2 className="mb-2 text-3xl font-semibold text-white">Initialize Enclave</h2>
-              <p className="mb-8 text-sm font-mono text-defi-muted">Create your cryptographic identity.</p>
-
-              <form onSubmit={handleRegister} className="space-y-4">
-                {error && <div className="p-3 bg-red-900/30 text-red-400 text-sm rounded-lg border border-red-500/50 font-mono">{error}</div>}
-                
-                <div className="relative">
-                  <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-defi-muted" />
-                  <input type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Developer Name" className="input-chrome w-full pl-12 font-mono text-gray-200" />
-                </div>
-                
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-defi-muted" />
-                  <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="dev@protocol.com" className="input-chrome w-full pl-12 font-mono text-gray-200" />
-                </div>
-                
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-defi-muted" />
-                  <input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="input-chrome w-full pl-12 font-mono text-gray-200" />
-                </div>
-
-                <button disabled={isLoading} type="submit" className="button-primary g-recaptcha flex w-full justify-center py-4 disabled:opacity-70">
-                  <span>{isLoading ? 'Encrypting...' : 'Deploy Identity'}</span>
-                  {!isLoading && <ArrowRight className="h-5 w-5" />}
-                </button>
-              </form>
+      <main className="mx-auto flex max-w-7xl items-center py-12">
+        <div className="grid w-full gap-8 lg:grid-cols-[0.92fr_1.08fr]">
+          <section className="light-panel px-6 py-8 md:px-8 md:py-10">
+            <div className="light-eyebrow mb-5">
+              <Sparkles className="h-4 w-4" />
+              Secure identity flow
             </div>
-          )}
+            <h1 className="text-3xl font-semibold leading-tight text-slate-900 md:text-4xl">{heading}</h1>
+            <p className="mt-4 max-w-xl text-sm leading-7 text-slate-500">{description}</p>
 
-          {step === 2 && (
-            <div className="animate-in fade-in zoom-in duration-500 text-center py-8">
-              <Mail className="mx-auto mb-6 h-16 w-16 animate-pulse text-defi-goldBright" />
-              <h2 className="mb-4 text-2xl font-semibold text-white">Verify Node Connection</h2>
-              <p className="mb-8 text-sm font-mono text-defi-muted">
-                We've routed a verification protocol to <strong>{email}</strong>. Please confirm to proceed.
-              </p>
-              <div className="flex items-center justify-center space-x-2 text-sm text-gray-400 font-mono">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-defi-gold border-t-transparent"></div>
-                <span>Awaiting handshake...</span>
+            {infoBanner && (
+              <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                {infoBanner}
+              </div>
+            )}
+
+            {(error || emailActionError) && (
+              <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {error || emailActionError}
+              </div>
+            )}
+
+            {view === 'welcome' && (
+              <div className="mt-8 space-y-6">
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={isGoogleLoading || isLoading}
+                  className="light-button-secondary w-full justify-center py-4 text-sm font-medium text-slate-700 disabled:opacity-70"
+                >
+                  <GoogleMark />
+                  <span>{isGoogleLoading ? 'Connecting Google...' : 'Continue with Google'}</span>
+                </button>
+
+                <div className="flex items-center gap-4 text-xs font-mono uppercase tracking-[0.24em] text-slate-400">
+                  <span className="h-px flex-1 bg-[#eadfcf]" />
+                  <span>Email and password</span>
+                  <span className="h-px flex-1 bg-[#eadfcf]" />
+                </div>
+
+                <form onSubmit={handleEmailAuth} className="space-y-4">
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-mono uppercase tracking-[0.2em] text-[#9a8357]">Email</span>
+                    <div className="relative">
+                      <Mail className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(event) => setEmail(event.target.value)}
+                        placeholder="team@useaima.com"
+                        className="light-input pl-12"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="block">
+                    <span className="mb-2 block text-xs font-mono uppercase tracking-[0.2em] text-[#9a8357]">Password</span>
+                    <div className="relative">
+                      <Lock className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="password"
+                        required
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
+                        placeholder="Minimum 6 characters"
+                        className="light-input pl-12"
+                      />
+                    </div>
+                  </label>
+
+                  <button disabled={isLoading || isGoogleLoading} type="submit" className="light-button-primary w-full justify-center py-4 disabled:opacity-70">
+                    <span>{isLoading ? 'Securing session...' : 'Get Started'}</span>
+                    {!isLoading && <ArrowRight className="h-5 w-5" />}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {view === 'email_verification' && (
+              <div className="mt-8 space-y-6">
+                <div className="rounded-3xl border border-[#eadfcf] bg-white/88 p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-700">
+                      <CheckCircle2 className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Verification address</p>
+                      <p className="mt-2 text-lg font-semibold text-slate-900">{currentEmail}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                        Once the verification link is opened, this window will route you to phone verification or the dashboard automatically.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <button type="button" onClick={handleResendVerification} disabled={isLoading} className="light-button-primary justify-center py-4 disabled:opacity-70">
+                    <span>{isLoading ? 'Sending...' : 'Send Verification Link'}</span>
+                  </button>
+                  <button type="button" onClick={handleUseAnotherAccount} className="light-button-secondary justify-center py-4">
+                    Use Another Account
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {view === 'phone_verification' && (
+              <div className="mt-8 space-y-6">
+                <div className="rounded-3xl border border-[#eadfcf] bg-white/88 p-6">
+                  <div className="flex items-start gap-4">
+                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-amber-700">
+                      <ShieldCheck className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Authenticated email</p>
+                      <p className="mt-2 text-lg font-semibold text-slate-900">{currentEmail}</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-500">
+                        We protect phone submission with enterprise reCAPTCHA and Firebase&apos;s invisible SMS verifier.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <form onSubmit={verificationId ? handleVerifyOtp : handleSendSms} className="space-y-4">
+                  {!verificationId ? (
+                    <>
+                      <label className="block">
+                        <span className="mb-2 block text-xs font-mono uppercase tracking-[0.2em] text-[#9a8357]">Phone number</span>
+                        <div className="relative">
+                          <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                          <input
+                            type="tel"
+                            required
+                            value={phone}
+                            onChange={(event) => setPhone(event.target.value)}
+                            placeholder="+1 555 000 0000"
+                            className="light-input pl-12"
+                          />
+                        </div>
+                      </label>
+                      <div id="firebase-recaptcha-container" />
+                      <button disabled={isLoading} type="submit" className="light-button-primary w-full justify-center py-4 disabled:opacity-70">
+                        <span>{isLoading ? 'Preparing secure SMS...' : 'Verify Phone'}</span>
+                        {!isLoading && <ArrowRight className="h-5 w-5" />}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <label className="block">
+                        <span className="mb-2 block text-xs font-mono uppercase tracking-[0.2em] text-[#9a8357]">Verification code</span>
+                        <input
+                          type="text"
+                          required
+                          maxLength={6}
+                          value={otp}
+                          onChange={(event) => setOtp(event.target.value)}
+                          placeholder="000000"
+                          className="light-input text-center font-mono text-lg tracking-[0.55em]"
+                        />
+                      </label>
+                      <button disabled={isLoading} type="submit" className="light-button-primary w-full justify-center py-4 disabled:opacity-70">
+                        <span>{isLoading ? 'Linking phone...' : 'Confirm Code'}</span>
+                        {!isLoading && <ArrowRight className="h-5 w-5" />}
+                      </button>
+                    </>
+                  )}
+                </form>
+              </div>
+            )}
+          </section>
+
+          <aside className="light-panel relative overflow-hidden p-4 md:p-5">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(207,169,93,0.18),transparent_32%),radial-gradient(circle_at_85%_16%,rgba(245,158,11,0.12),transparent_24%)]" />
+            <div className="relative flex h-full flex-col justify-between rounded-[24px] border border-[#eadfcf] bg-[#fffaf1] p-6">
+              <div>
+                <p className="text-xs font-mono uppercase tracking-[0.24em] text-[#9a8357]">Identity and approvals</p>
+                <h2 className="mt-4 text-3xl font-semibold leading-tight text-slate-900">
+                  Secure every agent action before it reaches settlement.
+                </h2>
+                <p className="mt-4 max-w-lg text-sm leading-7 text-slate-500">
+                  This welcome surface is intentionally quieter and more editorial, with the same premium trust cues as a modern protocol docs experience.
+                </p>
+              </div>
+
+              <div className="mt-8 rounded-[28px] border border-[#eadfcf] bg-white/88 p-4 shadow-[0_24px_54px_rgba(108,83,39,0.08)]">
+                <img
+                  src={welcomeVisual}
+                  alt="Aima UTG welcome illustration"
+                  className="aspect-[4/3] w-full rounded-[22px] border border-[#efe2cc] object-cover"
+                />
+              </div>
+
+              <div className="mt-8 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+                <div className="rounded-2xl border border-[#eadfcf] bg-white/84 p-4">
+                  <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Email verification</p>
+                  <p className="mt-2 leading-6">Firebase verification links resume the same browser flow automatically.</p>
+                </div>
+                <div className="rounded-2xl border border-[#eadfcf] bg-white/84 p-4">
+                  <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Phone safeguard</p>
+                  <p className="mt-2 leading-6">Enterprise reCAPTCHA and Firebase SMS checks gate the next step before onboarding.</p>
+                </div>
               </div>
             </div>
-          )}
-
-          {step === 3 && (
-            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-              <div className="eyebrow mb-5">Two-factor confirmation</div>
-              <h2 className="mb-2 text-3xl font-semibold text-white">2FA Setup</h2>
-              <p className="mb-8 text-sm font-mono text-defi-muted">Secure the enclave with SMS multi-factor authentication.</p>
-
-              <form onSubmit={!verificationId ? handleSendSMS : handleVerifyOTP} className="space-y-4">
-                {error && <div className="p-3 bg-red-900/30 text-red-400 text-sm rounded-lg border border-red-500/50 font-mono">{error}</div>}
-                
-                {!verificationId ? (
-                  <>
-                    <div className="relative">
-                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-defi-muted" />
-                      <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 000-0000" className="input-chrome w-full pl-12 font-mono text-gray-200" />
-                    </div>
-                    <div id="firebase-recaptcha-container"></div>
-                    <button disabled={isLoading} type="submit" className="button-primary g-recaptcha flex w-full justify-center py-4 disabled:opacity-70">
-                      <span>{isLoading ? 'Routing SMS...' : 'Transmit Code'}</span>
-                      {!isLoading && <ArrowRight className="h-5 w-5" />}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <div className="relative">
-                      <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-defi-muted" />
-                      <input type="text" required maxLength={6} value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="000000" className="input-chrome w-full pl-12 text-center font-mono text-lg tracking-[1em] text-white" />
-                    </div>
-                    <button disabled={isLoading} type="submit" className="flex w-full items-center justify-center space-x-2 rounded-xl bg-defi-emerald py-4 font-bold text-white shadow-[0_0_15px_rgba(16,185,129,0.3)] transition-all hover:bg-emerald-500 disabled:opacity-70">
-                      <span>{isLoading ? 'Verifying...' : 'Authenticate'}</span>
-                      {!isLoading && <CheckCircle className="h-5 w-5" />}
-                    </button>
-                  </>
-                )}
-              </form>
-            </div>
-          )}
-
+          </aside>
         </div>
       </main>
     </div>
