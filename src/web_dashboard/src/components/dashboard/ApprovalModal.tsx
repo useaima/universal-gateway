@@ -1,21 +1,9 @@
 import { AlertTriangle, ArrowRightLeft, ShieldAlert, X } from 'lucide-react';
 import StatusBadge from '../ui/StatusBadge';
-
-interface ApprovalTransaction {
-  id: string;
-  agent: string;
-  network: string;
-  amount: number;
-  status: 'Completed' | 'Pending Review' | 'Blocked';
-  reasoning: string;
-  policyReason: string;
-  requestedAction: string;
-  policyRule: string;
-  gas: string;
-}
+import type { LiveTransactionRecord } from '../../lib/liveDashboard';
 
 interface ApprovalModalProps {
-  transaction: ApprovalTransaction | null;
+  transaction: LiveTransactionRecord | null;
   onClose: () => void;
 }
 
@@ -45,7 +33,7 @@ export default function ApprovalModal({ transaction, onClose }: ApprovalModalPro
               policy breakdown below.
             </p>
           </div>
-          <StatusBadge status={transaction.status} />
+          <StatusBadge status={transaction.statusUi} />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">

@@ -54,7 +54,7 @@ class ExecutionWrapper:
             self.idempotency.lock_key(id_key, self.user_id)
 
         # 4. LOG STATE: PREFLIGHT
-        self._log_state(task_name, "PREFLIGHT", {"initial_quote": initial_quote})
+        self._log_state(task_name, "PREFLIGHT", {"initial_quote": initial_quote}, transaction_id=transaction_id)
         
         try:
             # 5. FINAL-LOOK VALIDATION (Atomic Inventory Check)
@@ -62,26 +62,26 @@ class ExecutionWrapper:
                 await self._validate_final_price(initial_quote)
 
             # 6. EXECUTE with Real Timeout Guard
-            self._log_state(task_name, "EXECUTE", {})
+            self._log_state(task_name, "EXECUTE", {}, transaction_id=transaction_id)
             remaining_time = self.timeout - (time.time() - self.start_time)
             
             # Atomic Execution logic
             result = await asyncio.wait_for(step_fn(), timeout=max(0.1, remaining_time))
             
             # 7. VERIFY & FINALIZE IDEMPOTENCY
-            self._log_state(task_name, "VERIFY", {"result": str(result)})
+            self._log_state(task_name, "VERIFY", {"result": str(result)}, transaction_id=transaction_id)
             final_res = {"status": "SUCCESS", "result": result}
             self.idempotency.finalize_key(id_key, self.user_id, "SUCCESS", final_res)
             return final_res
 
         except asyncio.TimeoutError:
-            self._log_state(task_name, "FAILED", {"error": "Execution Timeout"})
+            self._log_state(task_name, "FAILED", {"error": "Execution Timeout"}, transaction_id=transaction_id)
             return {"status": "FAILED", "error": f"Task exceeded {self.timeout}s timeout Budget."}
         except PriceMismatchException as e:
-            self._log_state(task_name, "FAILED", {"error": str(e)})
+            self._log_state(task_name, "FAILED", {"error": str(e)}, transaction_id=transaction_id)
             return {"status": "HALTED", "error": f"Price Variance Detected: {e}"}
         except Exception as e:
-            self._log_state(task_name, "FAILED", {"error": str(e)})
+            self._log_state(task_name, "FAILED", {"error": str(e)}, transaction_id=transaction_id)
             return {"status": "FAILED", "error": str(e)}
         finally:
             # 8. SECURE CLEANUP (Ephemerality Guard)
@@ -123,11 +123,12 @@ class ExecutionWrapper:
                 f"vs quoted ${initial_quote:.2f} (delta {delta:.1%} > {tolerance:.0%})"
             )
 
-    def _log_state(self, task: str, state: str, metadata: dict):
+    def _log_state(self, task: str, state: str, metadata: dict, transaction_id: str = None):
         """Writes signed, multi-format state entries to the Vault."""
         entry = {
             "user_id": self.user_id,
             "session_id": self.session_id,
+            "transaction_id": transaction_id,
             "task": task,
             "state": state,
             "metadata": metadata,
