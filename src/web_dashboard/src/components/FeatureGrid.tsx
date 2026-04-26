@@ -1,32 +1,34 @@
-import { Zap, ShieldCheck, Code } from 'lucide-react';
+import { Bot, ShieldCheck, Zap } from 'lucide-react';
 
 export default function FeatureGrid() {
   return (
-    <section id="features" className="py-24 bg-defi-dark border-t border-defi-border">
-      <div className="max-w-6xl mx-auto px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold mb-4 text-white">Engineering over Finance</h2>
-          <p className="text-defi-muted max-w-xl mx-auto font-mono text-sm">Built purely on decentralized primitives to ensure borderless, ungovernable agent execution.</p>
-        </div>
-        
-        <div className="grid md:grid-cols-3 gap-8">
-          <div className="glass-panel p-8 hover:-translate-y-1 transition-transform bg-defi-surface/60 hover:bg-defi-surface border-defi-border hover:border-defi-accent/50 group">
-            <Zap className="w-10 h-10 text-defi-accent mb-6 group-hover:drop-shadow-[0_0_10px_rgba(139,92,246,0.8)] transition-all" />
-            <h3 className="text-xl font-bold mb-3 text-gray-100">Dynamic Agent Billing</h3>
-            <p className="text-defi-muted text-sm leading-relaxed">Agents run on a Pay-As-You-Go spread algorithm. The Protocol intercepts transactions and routes pool fees automatically via EVM smart execution.</p>
-          </div>
-          <div className="glass-panel p-8 hover:-translate-y-1 transition-transform bg-defi-surface/60 hover:bg-defi-surface border-defi-border hover:border-defi-accent/50 group">
-            <ShieldCheck className="w-10 h-10 text-defi-accent mb-6 group-hover:drop-shadow-[0_0_10px_rgba(139,92,246,0.8)] transition-all" />
-            <h3 className="text-xl font-bold mb-3 text-gray-100">Cryptographic Firewall</h3>
-            <p className="text-defi-muted text-sm leading-relaxed">Agents propose intent. The Smart Contract halts execution until the human vault owner provides biometric or MPC consensus.</p>
-          </div>
-          <div className="glass-panel p-8 hover:-translate-y-1 transition-transform bg-defi-surface/60 hover:bg-defi-surface border-defi-border hover:border-defi-accent/50 group">
-            <Code className="w-10 h-10 text-defi-accent mb-6 group-hover:drop-shadow-[0_0_10px_rgba(139,92,246,0.8)] transition-all" />
-            <h3 className="text-xl font-bold mb-3 text-gray-100">Multi-Chain Agnostic</h3>
-            <p className="text-defi-muted text-sm leading-relaxed">Native RPC routing for Ethereum, Arbitrum, and Base. Write one agent intent, settle liquidity on any EVM chain.</p>
-          </div>
+    <section id="features" className="py-28">
+      <div className="mx-auto max-w-7xl px-4 md:px-8">
+        <div className="mb-16 text-center">
+          <div className="eyebrow mb-6">Core capabilities</div>
+          <h2 className="text-4xl font-semibold text-white md:text-5xl">A control plane built for agentic transactions</h2>
+          <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-defi-muted">
+            We keep the experience readable and premium, but the underlying story stays rigorous: policy, transparency, and secure automation.
+          </p>
         </div>
 
+        <div className="grid gap-8 md:grid-cols-3">
+          <div className="section-panel group p-8 transition duration-200 hover:-translate-y-0.5">
+            <Zap className="mb-6 h-10 w-10 text-defi-goldBright" />
+            <h3 className="text-xl font-semibold text-white">Proxy-less automation</h3>
+            <p className="mt-3 text-sm leading-7 text-defi-muted">Agents propose actions directly through the gateway without handing over full wallet control or rewriting their execution logic.</p>
+          </div>
+          <div className="section-panel group p-8 transition duration-200 hover:-translate-y-0.5">
+            <ShieldCheck className="mb-6 h-10 w-10 text-defi-amber" />
+            <h3 className="text-xl font-semibold text-white">Safety Sandwich security</h3>
+            <p className="mt-3 text-sm leading-7 text-defi-muted">Domain guardrails, deterministic idempotency, and approval interrupts work together to block unsafe execution paths before settlement.</p>
+          </div>
+          <div id="developers" className="section-panel group p-8 transition duration-200 hover:-translate-y-0.5">
+            <Bot className="mb-6 h-10 w-10 text-defi-emerald" />
+            <h3 className="text-xl font-semibold text-white">Human-in-the-loop approvals</h3>
+            <p className="mt-3 text-sm leading-7 text-defi-muted">High-risk actions pause into a reviewed signature step with agent reasoning, policy context, and a clean audit trail.</p>
+          </div>
+        </div>
       </div>
     </section>
   );

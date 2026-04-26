@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, RecaptchaVerifier } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider, RecaptchaVerifier, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
+import type { FirebaseApp } from 'firebase/app';
 
 // Pulling configuration from Vercel/Vite Environment Variables
 const firebaseConfig = {
@@ -13,10 +14,10 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase with error safety for production
-let app;
-let auth: any;
-let db: any;
-let googleProvider: any;
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let db: Firestore | undefined;
+let googleProvider: GoogleAuthProvider | undefined;
 
 try {
   app = initializeApp(firebaseConfig);
