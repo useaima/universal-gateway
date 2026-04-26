@@ -32,9 +32,8 @@ const config = getDefaultConfig({
 const queryClient = new QueryClient();
 
 function LandingPage({ onLoginSuccess }: { onLoginSuccess: (email: string) => void }) {
-  // onLoginSuccess now actually maps to handleStartRegistration from App
   return (
-    <div className="min-h-screen bg-brand-cream text-brand-dark flex flex-col font-sans">
+    <div className="page-shell min-h-screen flex flex-col font-sans">
       <Navbar />
       <Hero onOpenAuth={() => onLoginSuccess("trigger")} />
       <HowItWorks />
@@ -59,12 +58,6 @@ export default function App() {
     setUserEmail(email);
     setIsAuthenticated(true);
     setShowRegistration(false);
-  };
-
-  const handleLoginSuccess = (email: string) => {
-    // Legacy support if they bypass registration (e.g., session already valid)
-    setUserEmail(email);
-    setIsAuthenticated(true);
   };
 
   const handleOnboardingComplete = () => {

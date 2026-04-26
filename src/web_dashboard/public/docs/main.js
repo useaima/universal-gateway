@@ -58,11 +58,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 4. Smooth Anchor Scrolling
-    document.querySelectorAll('nav a').forEach(anchor => {
+    document.querySelectorAll('nav a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
             e.preventDefault();
             const targetId = this.getAttribute('href');
             const targetContent = document.querySelector(targetId);
+            if (!targetContent) return;
             
             // Update active link
             document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
@@ -79,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('scroll', () => {
         let current = '';
         const sections = document.querySelectorAll('.doc-section');
-        const navLinks = document.querySelectorAll('nav a');
+        const navLinks = document.querySelectorAll('nav a[href^="#"]');
 
         sections.forEach(section => {
             const sectionTop = section.offsetTop;

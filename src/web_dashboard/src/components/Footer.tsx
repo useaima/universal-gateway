@@ -1,29 +1,33 @@
 export default function Footer() {
   return (
-    <footer id="support" className="w-full py-16 border-t border-brand-beige text-center bg-brand-cream">
-      <div className="max-w-4xl mx-auto px-8">
-        <h3 className="text-2xl font-bold mb-6">Connect with Aima</h3>
-        <p className="text-brand-muted mb-8">For support, partnership inquiries, or developer questions, reach out on our official channels.</p>
-        
-        <div className="flex justify-center space-x-6 mb-12">
-          <a href="https://youtube.com/@aima" target="_blank" rel="noopener noreferrer" className="p-3 glass-panel hover:bg-brand-gold hover:text-white transition-colors flex items-center justify-center font-bold">
+    <footer id="support" className="py-20">
+      <div className="mx-auto max-w-7xl px-4 md:px-8">
+        <div className="section-panel p-10 text-center">
+          <h3 className="text-3xl font-semibold text-white">Stay close to the protocol</h3>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-defi-muted">
+            Support, partnership, and developer conversations all belong in the same polished experience.
+          </p>
+
+          <div className="mb-12 mt-10 flex flex-wrap justify-center gap-4">
+            <a href="https://youtube.com/@aima" target="_blank" rel="noopener noreferrer" className="button-secondary min-w-32">
             YouTube
           </a>
-          <a href="https://instagram.com/aima.ai123" target="_blank" rel="noopener noreferrer" className="p-3 glass-panel hover:bg-brand-gold hover:text-white transition-colors flex items-center justify-center font-bold">
+            <a href="https://instagram.com/aima.ai123" target="_blank" rel="noopener noreferrer" className="button-secondary min-w-32">
             Instagram
           </a>
-          <a href="https://linkedin.com/in/alvinsmukabane" target="_blank" rel="noopener noreferrer" className="p-3 glass-panel hover:bg-brand-gold hover:text-white transition-colors flex items-center justify-center font-bold">
+            <a href="https://linkedin.com/in/alvinsmukabane" target="_blank" rel="noopener noreferrer" className="button-secondary min-w-32">
             LinkedIn
           </a>
-          <a href="https://facebook.com/techtrends" target="_blank" rel="noopener noreferrer" className="p-3 glass-panel hover:bg-brand-gold hover:text-white transition-colors flex items-center justify-center font-bold">
+            <a href="https://facebook.com/techtrends" target="_blank" rel="noopener noreferrer" className="button-secondary min-w-32">
             Facebook
           </a>
-          <a href="https://reddit.com/r/aima58" target="_blank" rel="noopener noreferrer" className="p-3 glass-panel hover:bg-brand-gold hover:text-white transition-colors flex items-center justify-center font-bold text-xl group">
-            <span className="text-brand-dark group-hover:text-white">r/aima58</span>
+            <a href="https://reddit.com/r/aima58" target="_blank" rel="noopener noreferrer" className="button-secondary min-w-32">
+              r/aima58
           </a>
+          </div>
+
+          <p className="text-sm font-medium text-defi-muted">© 2026 Engineering at Aima. All rights reserved.</p>
         </div>
-        
-        <p className="text-sm font-semibold text-brand-muted">© 2026 Engineering at Aima. All rights reserved.</p>
       </div>
     </footer>
   );

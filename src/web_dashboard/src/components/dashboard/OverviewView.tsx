@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Key, Copy, Activity, Code, TrendingUp, ShieldAlert, Bot } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Key, Copy, Activity, Code, TrendingUp, ShieldAlert, Bot, Zap } from 'lucide-react';
+import { Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 interface OverviewViewProps {
   apiKey: string;
@@ -17,6 +17,7 @@ const mockChartData = [
 
 export default function OverviewView({ apiKey }: OverviewViewProps) {
   const [copied, setCopied] = useState(false);
+  const [revealed, setRevealed] = useState(false);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(apiKey);
@@ -26,103 +27,141 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
-      {/* Top Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-defi-surface p-6 rounded-2xl border border-defi-border shadow-[0_0_20px_rgba(139,92,246,0.1)] flex items-center space-x-4 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-defi-emerald/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-          <div className="p-4 bg-defi-emerald/20 text-defi-emerald rounded-xl drop-shadow-[0_0_8px_rgba(16,185,129,0.5)]">
-            <TrendingUp className="w-6 h-6" />
-          </div>
-          <div className="relative z-10">
-            <p className="text-sm font-mono text-defi-muted uppercase tracking-wider">30-Day Volume</p>
-            <h3 className="text-2xl font-black text-white">$12,460.00</h3>
-          </div>
-        </div>
-        
-        <div className="bg-defi-surface p-6 rounded-2xl border border-defi-border shadow-[0_0_20px_rgba(139,92,246,0.1)] flex items-center space-x-4 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-          <div className="p-4 bg-blue-500/20 text-blue-400 rounded-xl drop-shadow-[0_0_8px_rgba(59,130,246,0.5)]">
-            <Bot className="w-6 h-6" />
-          </div>
-          <div className="relative z-10">
-            <p className="text-sm font-mono text-defi-muted uppercase tracking-wider">Active Agents</p>
-            <h3 className="text-2xl font-black text-white">3</h3>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="metric-card relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(16,185,129,0.16),transparent_42%)]" />
+          <div className="relative z-10 flex items-center space-x-4">
+            <div className="rounded-2xl bg-defi-emerald/20 p-4 text-defi-emerald">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm font-mono uppercase tracking-wider text-defi-muted">30-Day Volume</p>
+              <h3 className="text-2xl font-semibold text-white">$12,460.00</h3>
+              <p className="mt-1 text-xs font-mono text-defi-emerald">+18.4% vs prior window</p>
+            </div>
           </div>
         </div>
 
-        <div className="bg-defi-surface p-6 rounded-2xl border border-defi-border shadow-[0_0_20px_rgba(139,92,246,0.1)] flex items-center space-x-4 relative overflow-hidden group">
-          <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
-          <div className="p-4 bg-red-500/20 text-red-400 rounded-xl drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]">
-            <ShieldAlert className="w-6 h-6" />
+        <div className="metric-card relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(207,169,93,0.14),transparent_42%)]" />
+          <div className="relative z-10 flex items-center space-x-4">
+            <div className="rounded-2xl bg-defi-gold/15 p-4 text-defi-goldBright">
+              <Bot className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm font-mono uppercase tracking-wider text-defi-muted">Active Agents</p>
+              <h3 className="text-2xl font-semibold text-white">3</h3>
+              <p className="mt-1 text-xs font-mono text-defi-muted">Treasury, arbitrage, yield</p>
+            </div>
           </div>
-          <div className="relative z-10">
-            <p className="text-sm font-mono text-defi-muted uppercase tracking-wider">Pending Signatures</p>
-            <h3 className="text-2xl font-black text-white">1</h3>
+        </div>
+
+        <div className="metric-card relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.18),transparent_42%)]" />
+          <div className="relative z-10 flex items-center space-x-4">
+            <div className="rounded-2xl bg-defi-amber/20 p-4 text-defi-amber">
+              <ShieldAlert className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm font-mono uppercase tracking-wider text-defi-muted">Pending Signatures</p>
+              <h3 className="text-2xl font-semibold text-white">1</h3>
+              <p className="mt-1 text-xs font-mono text-defi-amber">1 request awaiting manual review</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="metric-card relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.16),transparent_42%)]" />
+          <div className="relative z-10 flex items-center space-x-4">
+            <div className="rounded-2xl bg-defi-amber/20 p-4 text-defi-amber">
+              <Zap className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-sm font-mono uppercase tracking-wider text-defi-muted">Network Gas</p>
+              <h3 className="text-2xl font-semibold text-white">14 gwei</h3>
+              <p className="mt-1 text-xs font-mono text-defi-muted">Monitored across enabled networks</p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Chart & Key Row */}
       <div className="grid lg:grid-cols-3 gap-8">
-        
-        {/* Chart Area */}
-        <div className="lg:col-span-2 bg-defi-surface rounded-3xl p-8 border border-defi-border shadow-[0_0_30px_rgba(139,92,246,0.1)]">
+        <div className="section-panel lg:col-span-2 p-8">
           <div className="flex items-center space-x-3 mb-6">
-            <div className="p-3 bg-defi-accent/20 text-defi-accent rounded-xl drop-shadow-[0_0_5px_rgba(139,92,246,0.8)] border border-defi-accent/30">
-              <Activity className="w-6 h-6" />
+            <div className="rounded-xl border border-defi-gold/30 bg-defi-gold/10 p-3 text-defi-goldBright">
+              <Activity className="h-6 w-6" />
             </div>
-            <h2 className="text-xl font-bold text-white">Protocol Throughput (USD)</h2>
+            <div>
+              <h2 className="text-xl font-semibold text-white">Protocol Throughput</h2>
+              <p className="text-sm text-defi-muted">Volume, execution cadence, and recent directional movement.</p>
+            </div>
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockChartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#374151" />
-                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12, fontFamily: 'monospace' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12, fontFamily: 'monospace' }} dx={-10} tickFormatter={(value) => `$${value}`} />
-                <Tooltip 
-                  contentStyle={{ borderRadius: '12px', border: '1px solid #374151', backgroundColor: '#111827', color: '#fff', fontFamily: 'monospace' }}
+              <AreaChart data={mockChartData}>
+                <defs>
+                  <linearGradient id="goldArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f1cc7a" stopOpacity={0.34} />
+                    <stop offset="100%" stopColor="#f1cc7a" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(215,196,165,0.12)" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#9ca3af', fontSize: 12, fontFamily: 'JetBrains Mono, monospace' }} dx={-10} tickFormatter={(value) => `$${value}`} />
+                <Tooltip
+                  contentStyle={{ borderRadius: '16px', border: '1px solid rgba(215,196,165,0.18)', backgroundColor: '#12161d', color: '#fff', fontFamily: 'JetBrains Mono, monospace' }}
                   itemStyle={{ color: '#fff' }}
                   formatter={(value: number) => [`$${value}`, 'Volume']}
                 />
-                <Line type="monotone" dataKey="volume" stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: '#8b5cf6', strokeWidth: 2, stroke: '#111827' }} activeDot={{ r: 6, fill: '#a78bfa' }} />
-              </LineChart>
+                <Area type="monotone" dataKey="volume" stroke="none" fill="url(#goldArea)" />
+                <Line type="monotone" dataKey="volume" stroke="#f1cc7a" strokeWidth={3} dot={{ r: 4, fill: '#f1cc7a', strokeWidth: 2, stroke: '#111827' }} activeDot={{ r: 6, fill: '#fff1cf' }} />
+              </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* API Key & Code */}
         <div className="space-y-8">
-          <section className="bg-defi-surface rounded-3xl p-6 border border-defi-border shadow-[0_0_20px_rgba(139,92,246,0.1)] relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-defi-accent/5 to-transparent pointer-events-none"></div>
+          <section className="section-panel relative overflow-hidden p-6">
             <div className="flex items-center space-x-3 mb-4 relative z-10">
-              <div className="p-2 bg-defi-accent/20 text-defi-accent rounded-lg border border-defi-accent/30 drop-shadow-[0_0_5px_rgba(139,92,246,0.8)]">
-                <Key className="w-5 h-5" />
+              <div className="rounded-lg border border-defi-gold/30 bg-defi-gold/10 p-2 text-defi-goldBright">
+                <Key className="h-5 w-5" />
               </div>
-              <h2 className="text-lg font-bold text-white">Gateway Key</h2>
+              <h2 className="text-lg font-semibold text-white">Gateway Key</h2>
             </div>
-            <p className="text-defi-muted text-sm mb-4 font-mono relative z-10">
+            <p className="relative z-10 mb-4 text-sm font-mono text-defi-muted">
               Inject this into your agent environment variables. Keep it secret.
             </p>
-            <div className="bg-defi-dark border border-defi-border rounded-xl p-3 font-mono text-xs text-gray-300 overflow-hidden text-ellipsis mb-3 relative z-10 shadow-inner">
-              {apiKey}
-            </div>
-            <button 
-              onClick={handleCopy}
-              className="w-full bg-defi-accent text-white py-3 rounded-xl font-bold hover:bg-violet-600 transition-colors flex items-center justify-center space-x-2 relative z-10 shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+            <button
+              onClick={() => setRevealed((value) => !value)}
+              className="mb-3 w-full rounded-xl border border-defi-border bg-[#0f1319] p-3 text-left font-mono text-xs text-gray-300 shadow-inner"
             >
-              {copied ? <span className="text-emerald-400">Copied!</span> : <><Copy className="w-4 h-4" /><span>Copy Key</span></>}
+              {revealed ? apiKey : `${apiKey.slice(0, 10)}******************************`}
+            </button>
+            <button
+              onClick={() => setRevealed((value) => !value)}
+              className="mb-3 text-xs font-mono text-defi-muted transition hover:text-white"
+            >
+              {revealed ? 'Hide key' : 'Reveal key'}
+            </button>
+            <button
+              onClick={handleCopy}
+              className="button-primary w-full justify-center"
+            >
+              {copied ? <span className="text-emerald-950">Copied!</span> : <><Copy className="h-4 w-4" /><span>Copy Key</span></>}
             </button>
           </section>
 
-          <section className="bg-[#0d1117] border border-[#30363d] rounded-3xl p-6 shadow-xl text-white">
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="p-2 bg-[#161b22] text-[#8b949e] border border-[#30363d] rounded-lg">
-                <Code className="w-5 h-5" />
+          <section className="code-shell p-6 text-white">
+            <div className="mb-4 flex items-center space-x-3">
+              <div className="rounded-lg border border-defi-border bg-[#161b22] p-2 text-defi-muted">
+                <Code className="h-5 w-5" />
               </div>
-              <h2 className="text-lg font-bold text-white">Quick Start</h2>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Quick Start</h2>
+                <p className="text-sm text-defi-muted">Initialization snippet</p>
+              </div>
             </div>
-            <div className="bg-[#161b22] rounded-xl p-4 border border-[#30363d] font-mono text-xs text-[#c9d1d9] overflow-x-auto shadow-inner">
+            <div className="rounded-xl border border-[#30363d] bg-[#161b22] p-4 font-mono text-xs text-[#c9d1d9] shadow-inner">
               <pre>
                 <code>
 <span className="text-[#ff7b72]">import</span> {'{'} UTGClient {'}'} <span className="text-[#ff7b72]">from</span> <span className="text-[#a5d6ff]">'@aima/protocol-sdk'</span>;{'\n\n'}
@@ -135,7 +174,6 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
             </div>
           </section>
         </div>
-
       </div>
     </div>
   );
