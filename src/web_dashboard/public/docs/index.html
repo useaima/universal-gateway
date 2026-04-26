@@ -1,251 +1,30 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aima Protocol | Documentation</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
-</head>
-<body class="dark-mode">
-    <div class="glass-bg"></div>
-    
-    <aside class="sidebar">
-        <div class="logo">
-            <span class="logo-icon">A</span>
-            <div>
-                <h1>Aima Protocol Docs</h1>
-                <p>UTG Documentation</p>
-            </div>
-        </div>
-        <nav>
-            <ul class="nav-links">
-                <li class="nav-header">GETTING STARTED</li>
-                <li><a href="#intro" class="active">Introduction</a></li>
-                <li><a href="#architecture">Protocol Architecture</a></li>
-                <li><a href="skill.md" target="_blank" style="color: #f1cc7a; font-weight: 700;">For Agents (skill.md)</a></li>
-                <li><a href="#security-deep-dive">Security & Edge Cases</a></li>
-                <li><a href="#onboarding">Onboarding Wizard</a></li>
-                <li class="nav-header">INTEGRATION</li>
-                <li><a href="#agent-setup">Connecting to OpenClaw</a></li>
-                <li><a href="#changelog">Full Changelog</a></li>
-                <li class="nav-header">GOVERNANCE</li>
-                <li><a href="#security">Vault Security</a></li>
-                <li><a href="#legal">Legal & Compliance</a></li>
-            </ul>
-        </nav>
-        <div class="sidebar-footer">
-            <a href="https://github.com/Alvins-mukabane/universal-gateway" target="_blank" class="btn-github">
-                <span>View on GitHub</span>
-                <span class="icon">↗</span>
-            </a>
-        </div>
-    </aside>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="refresh" content="0; url=/docs" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aima Protocol Docs Redirect</title>
+    <script>
+      window.location.replace('/docs');
+    </script>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: Inter, system-ui, sans-serif;
+        background: #f7f1e3;
+        color: #111827;
+      }
 
-    <main class="content-area">
-        <header class="topbar">
-            <div class="os-selector">
-                <button class="os-btn active" data-os="windows">Windows</button>
-                <button class="os-btn" data-os="mac">macOS</button>
-                <button class="os-btn" data-os="linux">Linux</button>
-            </div>
-            <div class="search-bar">
-                <input type="text" placeholder="Search documentation">
-            </div>
-        </header>
-
-        <section id="intro" class="doc-section">
-            <img src="assets/docs_illustration.png" alt="Aima Protocol" style="width: 100%; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-            <div class="badge">Aima Protocol 2026.4</div>
-            <h1 class="premium-title">The Programmable Financial Protocol</h1>
-            <p class="lead-text">Aima Protocol (formerly UTG) is high-fidelity financial infrastructure that allows AI agents to interact with the real world securely, legally, and reliably without custodial risk.</p>
-            
-            <div class="cta-group">
-                <a href="#onboarding" class="btn-primary">Start Onboarding Wizard</a>
-                <a href="#real-world" class="btn-secondary">View the Case Study</a>
-            </div>
-            
-            <div class="code-preview-block">
-                <div class="code-header">Agent Request via OpenClaw</div>
-                <pre><code>"Action": "defi_eth.request_eth_transfer_reliable"
-"Arguments": {
-  "to_address": "0xAb580...",
-  "amount_eth": 0.05
-}
-
-// ⬇️ GATEWAY RESPONSE
-"Status": 401: PENDING_HUMAN_SIGNATURE
-"Message": "Halted. Strict HITL Enforced. Ask user for their 6-digit PIN on Telegram."</code></pre>
-            </div>
-        </section>
-
-        <section id="architecture" class="doc-section">
-            <h2>Protocol Architecture</h2>
-            <img src="assets/safety_sandwich.png" alt="Safety Sandwich Architecture" style="width: 100%; border-radius: 12px; margin-bottom: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-            <div class="features-grid">
-                <!-- Architecture content -->
-            </div>
-        </section>
-
-        <section id="security-deep-dive" class="doc-section">
-            <h2>🛡️ Deep Dive: Security & Edge Cases</h2>
-            <p>Traditional finance bridges fail at the edge. Aima UTG is engineered to handle "Agentic Chaos"—the unpredictable behavior of LLMs.</p>
-
-            <h3>1. The Idempotency Lock (Double-Spend Prevention)</h3>
-            <p>If an AI agent retries a transaction 100 times due to a high-latency response, the Gateway uses deterministic hashing to ensure only one execution occurs.</p>
-            <div class="code-container">
-                <div class="code-header"><span>core/execution_wrapper.py</span></div>
-                <pre><code># Check if this task has already been processed
-id_key = f"{user_id}_{task_name}"
-memo = self.idempotency.check_key(id_key, user_id)
-if memo and memo["status"] == "SUCCESS":
-    return memo["response"] # Return cached result instantly</code></pre>
-            </div>
-
-            <h3>2. Execution Guardrails (Infinite Loop Prevention)</h3>
-            <p>Agents can fall into "reasoning loops." We enforce a strict temporal budget on every transaction to prevent resource exhaustion.</p>
-            <div class="code-container">
-                <div class="code-header"><span>core/execution_wrapper.py</span></div>
-                <pre><code># Anti-Loop & Timeout Check
-if time.time() - self.start_time > self.timeout:
-    return {"status": "FAILED", "error": f"Task Timeout"}</code></pre>
-            </div>
-
-            <h3>3. Hashed Credentials (Local Vault Security)</h3>
-            <p>Even if the local SQLite database is compromised, Aima never stores raw API keys. We use SHA-256 salted hashing to verify identity.</p>
-            <div class="code-container">
-                <div class="code-header"><span>core/api_key_manager.py</span></div>
-                <pre><code># Generate raw key but only store the hash
-raw_key = f"utg_{secrets.token_urlsafe(32)}"
-key_hash = hashlib.sha256(raw_key.encode()).hexdigest()
-conn.execute("INSERT INTO api_keys (key_hash, name) VALUES (?, ?)")</code></pre>
-            </div>
-        </section>
-
-        <section id="installation" class="doc-section">
-            <h2>1. Installation</h2>
-            <p>Ensure you have Python 3.10+ installed. Use the tabs below for your platform's specific commands.</p>
-            
-            <div class="code-container">
-                <div class="code-tab windows visible">
-                    <div class="code-header"><span>PowerShell</span><button class="copy-btn">Copy</button></div>
-                    <pre><code># Install the Gateway as a global tool
-pip install .
-
-# If Scripts folder isn't on PATH, use:
-python -m pip install .</code></pre>
-                </div>
-                
-                <div class="code-tab mac">
-                    <div class="code-header"><span>Terminal (Homebrew)</span><button class="copy-btn">Copy</button></div>
-                    <pre><code># Install via Pip (Recommended)
-pip3 install .
-
-# Ensure Playwright dependencies are met
-npx playwright install firefox</code></pre>
-                </div>
-
-                <div class="code-tab linux">
-                    <div class="code-header"><span>Bash</span><button class="copy-btn">Copy</button></div>
-                    <pre><code># Install UTG
-pip install .
-
-# Setup Playwright Binaries
-npx playwright install-deps
-npx playwright install firefox</code></pre>
-                </div>
-            </div>
-        </section>
-
-        <section id="onboarding" class="doc-section">
-            <h2>2. The Onboarding Wizard</h2>
-            <p>No coding required! Run our interactive setup to generate your secure Identity Keys and configuration.</p>
-            <div class="code-container">
-                <div class="code-header"><span>Terminal</span><button class="copy-btn">Copy</button></div>
-                <pre><code>utg-onboard</code></pre>
-            </div>
-            <p class="note"><span>NOTE:</span> If the command isn't found, use <code>python src/gateway/utils/onboarding_wizard.py</code></p>
-        </section>
-
-        <section id="agent-setup" class="doc-section">
-            <h2>Connecting to OpenClaw</h2>
-            <p>Our completely revamped onboarding wizard automatically pushes the configuration to your OpenClaw JSON. But if you wish to see how it works under the hood (via WSL Bridge), here is the schema:</p>
-            <div class="code-container">
-                <div class="code-header"><span>~/.openclaw/openclaw.json</span><button class="copy-btn">Copy</button></div>
-                <pre><code>"mcp": {
-  "servers": {
-    "utg-gateway": {
-      "command": "/mnt/c/.../python.exe",
-      "args": ["/mnt/c/.../src/gateway/server.py"]
-    }
-  }
-}</code></pre>
-            </div>
-        </section>
-
-        <section id="api-keys" class="doc-section">
-            <h2>Managing API Keys</h2>
-            <p>Every connection to the Aima UTG must be authorized via an API key. You can generate these keys during onboarding or via the CLI.</p>
-            <div class="code-container">
-                <div class="code-header"><span>Terminal</span><button class="copy-btn">Copy</button></div>
-                <pre><code># Generate a new API Key for a specific client
-python src/gateway/utils/generate_key.py --name "Finance-Bot-01"</code></pre>
-            </div>
-            <p>Keys are hashed and stored in your <strong>Local Vault (SQLite)</strong>. The raw key is only shown once—save it securely!</p>
-        </section>
-
-        <section id="changelog" class="doc-section">
-            <h2>Full Changelog</h2>
-            <div class="changelog-item">
-                <h3>v1.1.0 - The "Security & API" Update</h3>
-                <ul>
-                    <li>Added <strong>ApiKeyManager</strong> for hashed API key authorization.</li>
-                    <li>Integrated <strong>generate_key</strong> utility into the Onboarding Wizard.</li>
-                    <li>Refactored <strong>server.py</strong> to support AIMA_API_KEY environment validation.</li>
-                    <li>Removed direct Cloudflare dependencies from internal documentation.</li>
-                </ul>
-            </div>
-            <div class="changelog-item" style="margin-top: 20px;">
-                <h3>v1.0.0 - Initial Protocol Release</h3>
-                <ul>
-                    <li>Launched the <strong>Eva Protocol Stack</strong> core architecture.</li>
-                    <li>Implemented <strong>Strict HITL</strong> (Human-in-the-Loop) via 6-digit PIN.</li>
-                    <li>Added global <strong>IdempotencyManager</strong> to prevent double-spending.</li>
-                <li>Created the <strong>ExecutionWrapper</strong> for durable saga management.</li>
-                </ul>
-            </div>
-        </section>
-
-        <section id="legal" class="doc-section">
-            <h2>⚖️ Legal, Privacy, and Compliance</h2>
-            <p>Enterprise protocols require enterprise governance. The UTG Gateway natively complies with strict regulatory frameworks.</p>
-
-            <div class="feature-grid">
-                <div class="feature-card">
-                    <h3>EU GDPR Compliance (Data Residency)</h3>
-                    <p>All transactional data, logs, and cryptographic traces are stored locally in the Agent Vault (SQLite). <strong>No data is sent to external or custodial servers</strong>, guaranteeing perfect adherence to EU data residency laws.</p>
-                </div>
-                <div class="feature-card">
-                    <h3>US E-SIGN ACT (Non-Repudiation)</h3>
-                    <p>Every executed transaction generates a cryptographic, immutable PDF receipt using Ed25519 signatures. During onboarding, users explicitly type `AGREE` to legally bind their gateway passcode to their identity under the E-SIGN Act.</p>
-                </div>
-            </div>
-
-            <h3 style="margin-top: 30px;">Terms of Service Policy</h3>
-            <div class="legal-box" style="padding: 20px; background: rgba(255,255,255,0.05); border-left: 3px solid #ffcc00; border-radius: 5px; font-size: 0.9em; line-height: 1.6;">
-                <p>1. <strong>Non-Custodial Liability</strong>: The protocol and the authors have no access to the `ETHEREUM_PRIVATE_KEY` stored on the user's localhost. Users assume full liability for the security of their local environment.</p>
-                <p>2. <strong>AI Indemnification</strong>: AI models (OpenRouter, Ollama) are non-deterministic. The protocol mitigates risk via the "Strict HITL Safety Sandwich", but the ultimate fiduciary duty rests with the human supplying the 6-digit signature PIN.</p>
-                <p>3. <strong>Anti-Spoofing</strong>: M-Pesa 3.0 integrations require valid Safaricom cryptographic handshake verification. Exploitation of the webhook tunnels violating local financial laws results in automatic reporting.</p>
-            </div>
-        </section>
-
-        <footer class="content-footer">
-            <p>&copy; 2026 Alvins Mukabane. Built for the future of Agentic Commerce. | <a href="#intro">Back to Top</a></p>
-        </footer>
-    </main>
-
-    <script src="main.js"></script>
-</body>
+      a {
+        color: #9a6f1d;
+      }
+    </style>
+  </head>
+  <body>
+    <p>Redirecting to the new docs experience at <a href="/docs">/docs</a>...</p>
+  </body>
 </html>

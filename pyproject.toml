@@ -13,7 +13,8 @@ dependencies = [
     "cryptography",
     "fpdf2",
     "browserbase",
-    "google-cloud-recaptcha-enterprise"
+    "google-cloud-recaptcha-enterprise",
+    "firebase-admin"
 ]
 
 [project.scripts]

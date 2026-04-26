@@ -4,6 +4,7 @@ import datetime
 import sqlite3
 from fpdf import FPDF
 from core.identity_manager import IdentityManager
+from core.firebase_live_publisher import get_live_publisher
 
 class AuditLogger:
     """
@@ -15,6 +16,7 @@ class AuditLogger:
         os.makedirs(self.log_dir, exist_ok=True)
         self.db_path = os.path.join(self.log_dir, "audit_v2.db")
         self.identity = IdentityManager()
+        self.live_publisher = get_live_publisher()
         self._init_db()
 
     def _init_db(self):
@@ -44,6 +46,8 @@ class AuditLogger:
                 (user_id, ts, action, payload_str, signature, status)
             )
             conn.commit()
+
+        self.live_publisher.sync_all()
 
     def log_action(self, tool_name: str, arguments: dict, result: str, user_id: str = "system"):
         """Convenience method: logs a tool call as a signed entry."""

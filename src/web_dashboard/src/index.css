@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   * {
@@ -18,11 +18,11 @@
   }
 
   body {
-    @apply bg-defi-dark text-white antialiased font-sans;
+    @apply bg-[#f7f1e3] text-slate-900 antialiased font-sans;
     background-image:
-      radial-gradient(circle at top left, rgba(207, 169, 93, 0.14), transparent 28%),
-      radial-gradient(circle at 85% 10%, rgba(245, 158, 11, 0.08), transparent 24%),
-      linear-gradient(180deg, #0b0e14 0%, #0d1117 100%);
+      radial-gradient(circle at top left, rgba(207, 169, 93, 0.18), transparent 24%),
+      radial-gradient(circle at 82% 10%, rgba(245, 158, 11, 0.12), transparent 18%),
+      linear-gradient(180deg, #f8f3e9 0%, #f4ecdf 100%);
     min-height: 100vh;
   }
 
@@ -41,10 +41,32 @@
 }
 
 @layer components {
-  .page-shell {
+  .landing-shell,
+  .auth-shell {
     @apply relative overflow-hidden;
   }
 
+  .landing-shell::before,
+  .auth-shell::before {
+    content: '';
+    @apply fixed inset-0 pointer-events-none;
+    background:
+      radial-gradient(circle at 16% 12%, rgba(207, 169, 93, 0.14), transparent 24%),
+      radial-gradient(circle at 88% 18%, rgba(245, 158, 11, 0.11), transparent 20%),
+      radial-gradient(circle at 55% 100%, rgba(255, 255, 255, 0.62), transparent 34%);
+  }
+
+  .dark-shell,
+  .page-shell {
+    @apply relative overflow-hidden bg-defi-dark text-white;
+    background-image:
+      radial-gradient(circle at top left, rgba(207, 169, 93, 0.14), transparent 28%),
+      radial-gradient(circle at 85% 10%, rgba(245, 158, 11, 0.08), transparent 24%),
+      linear-gradient(180deg, #0b0e14 0%, #0d1117 100%);
+    min-height: 100vh;
+  }
+
+  .dark-shell::before,
   .page-shell::before {
     content: '';
     @apply fixed inset-0 pointer-events-none;
@@ -98,5 +120,64 @@
     background: linear-gradient(90deg, rgba(255,255,255,0.04) 20%, rgba(207,169,93,0.14) 50%, rgba(255,255,255,0.04) 80%);
     background-size: 200% 100%;
     @apply animate-sheen rounded-lg;
+  }
+
+  .light-nav {
+    @apply rounded-full border border-[#e5d7bf] backdrop-blur-xl;
+    background: rgba(255, 251, 244, 0.82);
+    box-shadow: 0 22px 50px rgba(127, 91, 27, 0.08);
+  }
+
+  .light-panel {
+    @apply rounded-[28px] border border-[#e8dcc6] backdrop-blur-xl;
+    background: rgba(255, 252, 247, 0.82);
+    box-shadow: 0 30px 80px rgba(94, 62, 12, 0.08);
+  }
+
+  .light-card {
+    @apply rounded-3xl border border-[#eadfcf] transition duration-200 hover:-translate-y-0.5;
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 20px 56px rgba(118, 86, 33, 0.08);
+  }
+
+  .light-card:hover {
+    box-shadow: 0 26px 62px rgba(118, 86, 33, 0.12);
+  }
+
+  .light-code {
+    @apply rounded-2xl border border-[#eadfcf] shadow-inner;
+    background: #fffaf1;
+  }
+
+  .light-eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-[#e3d2b7] bg-white/80 px-4 py-2 text-[11px] font-mono uppercase tracking-[0.24em] text-[#8a6a2f];
+  }
+
+  .light-button-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#ddb866] px-5 py-3 font-semibold text-[#2b1e08] transition duration-200 hover:-translate-y-0.5;
+    background: linear-gradient(135deg, #f4d487, #d8a94a);
+    box-shadow: 0 12px 28px rgba(207, 169, 93, 0.22);
+  }
+
+  .light-button-primary:hover {
+    box-shadow: 0 18px 36px rgba(207, 169, 93, 0.28);
+  }
+
+  .light-button-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#e5d7bf] px-5 py-3 font-medium text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:border-[#d8be8c];
+    background: rgba(255, 255, 255, 0.72);
+  }
+
+  .light-button-secondary:hover {
+    background: #ffffff;
+  }
+
+  .light-input {
+    @apply w-full rounded-2xl border border-[#e7d8c2] px-4 py-3 text-slate-900 placeholder:text-slate-400 shadow-[0_10px_24px_rgba(111,86,44,0.05)] focus:border-[#d8b15f] focus:ring-2 focus:ring-[#e9c98155];
+    background: rgba(255, 255, 255, 0.92);
+  }
+
+  .light-divider {
+    @apply border-t border-[#eadfcf];
   }
 }

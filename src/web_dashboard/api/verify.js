@@ -5,10 +5,9 @@ export default async function handler(req, res) {
 
   const { token, action } = req.body;
   
-  // Vercel environment variables
-  const projectId = process.env.VITE_FIREBASE_PROJECT_ID;
-  const apiKey = process.env.VITE_FIREBASE_API_KEY; 
-  const siteKey = '6LeDEsgsAAAAAHglydox2_TQEPUDR0k6ZFm8ILUy';
+  const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID;
+  const apiKey = process.env.RECAPTCHA_API_KEY || process.env.VITE_FIREBASE_API_KEY;
+  const siteKey = process.env.RECAPTCHA_SITE_KEY || process.env.VITE_RECAPTCHA_SITE_KEY || '6LeDEsgsAAAAAHglydox2_TQEPUDR0k6ZFm8ILUy';
 
   if (!token || !projectId || !apiKey) {
     return res.status(400).json({ error: 'Missing required parameters or environment variables.' });
