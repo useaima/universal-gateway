@@ -19,19 +19,18 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
   const { isConnected, address } = useAccount();
 
   // Onboarding States
-  const [walletLinked, setWalletLinked] = useState(false);
   const [framework, setFramework] = useState<string>('');
   const [safetyLimit, setSafetyLimit] = useState<string>('100');
   const [networks, setNetworks] = useState<string[]>([]);
+  const walletLinked = step === 1 && isConnected && !!address;
 
   useEffect(() => {
-    // If we're on step 1 (wallet connection) and it connects, mark as linked
-    if (step === 1 && isConnected && address && !walletLinked) {
-      setWalletLinked(true);
-      // Automatically proceed after a short delay
-      setTimeout(() => setStep(2), 1500);
+    if (walletLinked) {
+      const timer = setTimeout(() => setStep(2), 1500);
+      return () => clearTimeout(timer);
     }
-  }, [isConnected, address, step, walletLinked]);
+    return undefined;
+  }, [walletLinked]);
 
   const toggleNetwork = (net: string) => {
     setNetworks(prev => 
@@ -58,9 +57,9 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
       } else {
         throw new Error("Missing user session or wallet address.");
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to save configuration:", err);
-      setError(err.message);
+      setError(err instanceof Error ? err.message : "Failed to save configuration.");
       setIsLoading(false);
     }
   };
@@ -74,19 +73,19 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
   ];
 
   return (
-    <div className="min-h-screen bg-defi-dark text-gray-200 flex flex-col font-sans items-center justify-center py-12 px-4 relative">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-defi-emerald/10 rounded-full blur-[120px] -z-10 pointer-events-none"></div>
-      <div className="max-w-2xl w-full bg-defi-surface/80 backdrop-blur-xl rounded-3xl shadow-[0_0_40px_rgba(16,185,129,0.15)] p-10 border border-defi-border">
+    <div className="page-shell flex min-h-screen items-center justify-center px-4 py-12 text-gray-200 font-sans">
+      <div className="section-panel max-w-2xl w-full p-10">
         
         <div className="text-center mb-10">
-          <ShieldCheck className="w-16 h-16 text-defi-emerald mx-auto mb-4 drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
-          <h1 className="text-3xl font-extrabold mb-2 text-white">Protocol Configuration</h1>
-          <p className="text-defi-muted font-mono text-sm">Set up your Smart Contract parameters.</p>
+          <ShieldCheck className="mx-auto mb-4 h-16 w-16 text-defi-emerald" />
+          <h1 className="mb-2 text-3xl font-semibold text-white">Protocol Configuration</h1>
+          <p className="text-sm font-mono text-defi-muted">Set up your Smart Contract parameters.</p>
+          <p className="mt-2 text-xs font-mono uppercase tracking-[0.2em] text-defi-beige">{userEmail}</p>
         </div>
 
         {/* Progress Bar */}
         <div className="flex items-center justify-between mb-12 relative px-4">
-          <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-1 bg-defi-dark rounded-full z-0 border border-defi-border"></div>
+          <div className="absolute left-4 right-4 top-1/2 -translate-y-1/2 h-1 rounded-full border border-defi-border bg-defi-dark z-0"></div>
           <div className={`absolute left-4 top-1/2 -translate-y-1/2 h-1 bg-defi-emerald rounded-full z-0 transition-all duration-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]`} style={{ width: `calc(${((step - 1) / 4) * 100}% - 2rem)` }}></div>
           
           {steps.map((s) => (
@@ -105,7 +104,7 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
           {/* STEP 1: WALLET */}
           {step === 1 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500 flex flex-col items-center justify-center text-center">
-              <div className="p-4 bg-defi-accent/20 text-defi-accent rounded-full mb-6 border border-defi-accent/30 shadow-[0_0_15px_rgba(139,92,246,0.2)]">
+              <div className="mb-6 rounded-full border border-defi-gold/30 bg-defi-gold/10 p-4 text-defi-goldBright shadow-[0_0_15px_rgba(207,169,93,0.16)]">
                 <Wallet className="w-10 h-10" />
               </div>
               <h2 className="text-2xl font-bold mb-4 text-white">Link Your Vault Wallet</h2>
@@ -129,7 +128,7 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
           {step === 2 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="flex items-center space-x-4 mb-6">
-                <div className="p-3 bg-blue-500/20 text-blue-400 border border-blue-500/30 rounded-xl shadow-[0_0_10px_rgba(59,130,246,0.2)]">
+                <div className="rounded-xl border border-defi-gold/30 bg-defi-gold/10 p-3 text-defi-goldBright shadow-[0_0_10px_rgba(207,169,93,0.14)]">
                   <Box className="w-6 h-6" />
                 </div>
                 <h2 className="text-2xl font-bold text-white">Select AI Engine</h2>
@@ -143,7 +142,7 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
                   <button 
                     key={fw}
                     onClick={() => setFramework(fw)}
-                    className={`p-4 rounded-xl border-2 text-left font-mono text-sm transition-all ${framework === fw ? 'border-defi-accent bg-defi-accent/10 text-white shadow-[0_0_10px_rgba(139,92,246,0.2)]' : 'border-defi-border text-defi-muted hover:border-defi-accent/50 hover:bg-defi-dark'}`}
+                    className={`p-4 rounded-xl border-2 text-left font-mono text-sm transition-all ${framework === fw ? 'border-defi-gold/35 bg-defi-gold/10 text-white shadow-[0_0_10px_rgba(207,169,93,0.15)]' : 'border-defi-border text-defi-muted hover:border-defi-gold/35 hover:bg-defi-dark'}`}
                   >
                     {fw}
                   </button>
@@ -153,7 +152,7 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
               <button 
                 onClick={() => setStep(3)}
                 disabled={!framework}
-                className="w-full bg-defi-accent text-white py-4 rounded-xl font-bold hover:bg-violet-600 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+                className="button-primary flex w-full justify-center py-4 disabled:opacity-70"
               >
                 <span>Initialize Engine</span>
                 <ArrowRight className="w-5 h-5" />
@@ -178,11 +177,11 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
                 <label className="block text-xs font-mono text-defi-muted mb-2 uppercase tracking-wider">Daily Automated Limit (USD)</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-defi-muted font-mono">$</span>
-                  <input 
+                  <input
                     type="number" 
                     value={safetyLimit}
                     onChange={(e) => setSafetyLimit(e.target.value)}
-                    className="w-full pl-8 pr-4 py-4 bg-defi-dark border border-defi-border rounded-xl focus:ring-1 focus:ring-defi-accent outline-none font-mono text-xl text-white"
+                    className="input-chrome w-full pl-8 font-mono text-xl text-white"
                   />
                 </div>
               </div>
@@ -192,7 +191,7 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
                 <button 
                   onClick={() => setStep(4)}
                   disabled={!safetyLimit || Number(safetyLimit) < 0}
-                  className="w-2/3 bg-defi-accent text-white py-4 rounded-xl font-bold hover:bg-violet-600 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+                  className="button-primary w-2/3 justify-center py-4 disabled:opacity-70"
                 >
                   <span>Set Guardrails</span>
                   <ArrowRight className="w-5 h-5" />
@@ -205,7 +204,7 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
           {step === 4 && (
             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
               <div className="flex items-center space-x-4 mb-6">
-                <div className="p-3 bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30 rounded-xl shadow-[0_0_10px_rgba(217,70,239,0.2)]">
+                <div className="rounded-xl border border-defi-amber/30 bg-defi-amber/10 p-3 text-defi-amber shadow-[0_0_10px_rgba(245,158,11,0.14)]">
                   <Network className="w-6 h-6" />
                 </div>
                 <h2 className="text-2xl font-bold text-white">Supported L2s & Chains</h2>
@@ -219,10 +218,10 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
                   <button 
                     key={net}
                     onClick={() => toggleNetwork(net)}
-                    className={`p-4 rounded-xl border-2 text-left font-mono text-sm transition-all flex items-center justify-between ${networks.includes(net) ? 'border-defi-accent bg-defi-accent/10 text-white shadow-[0_0_10px_rgba(139,92,246,0.2)]' : 'border-defi-border text-defi-muted hover:border-defi-accent/50 hover:bg-defi-dark'}`}
+                    className={`p-4 rounded-xl border-2 text-left font-mono text-sm transition-all flex items-center justify-between ${networks.includes(net) ? 'border-defi-gold/35 bg-defi-gold/10 text-white shadow-[0_0_10px_rgba(207,169,93,0.15)]' : 'border-defi-border text-defi-muted hover:border-defi-gold/35 hover:bg-defi-dark'}`}
                   >
                     {net}
-                    {networks.includes(net) && <CheckCircle className="w-5 h-5 text-defi-accent drop-shadow-[0_0_8px_rgba(139,92,246,0.8)]" />}
+                    {networks.includes(net) && <CheckCircle className="w-5 h-5 text-defi-goldBright drop-shadow-[0_0_8px_rgba(207,169,93,0.45)]" />}
                   </button>
                 ))}
               </div>
@@ -232,7 +231,7 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
                 <button 
                   onClick={() => setStep(5)}
                   disabled={networks.length === 0}
-                  className="w-2/3 bg-defi-accent text-white py-4 rounded-xl font-bold hover:bg-violet-600 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 shadow-[0_0_15px_rgba(139,92,246,0.3)]"
+                  className="button-primary w-2/3 justify-center py-4 disabled:opacity-70"
                 >
                   <span>Select Networks</span>
                   <ArrowRight className="w-5 h-5" />

@@ -1,15 +1,102 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  * {
+    scrollbar-color: rgba(207, 169, 93, 0.45) rgba(255, 255, 255, 0.05);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-defi-dark text-gray-100 antialiased font-sans;
+    @apply bg-defi-dark text-white antialiased font-sans;
+    background-image:
+      radial-gradient(circle at top left, rgba(207, 169, 93, 0.14), transparent 28%),
+      radial-gradient(circle at 85% 10%, rgba(245, 158, 11, 0.08), transparent 24%),
+      linear-gradient(180deg, #0b0e14 0%, #0d1117 100%);
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+
+  button, input, select, textarea {
+    @apply focus:outline-none;
+  }
+
+  ::selection {
+    background: rgba(207, 169, 93, 0.3);
+    color: #ffffff;
   }
 }
 
-.glass-panel {
-  @apply bg-defi-surface/40 backdrop-blur-md border border-defi-border shadow-[0_0_15px_rgba(139,92,246,0.1)] rounded-2xl;
+@layer components {
+  .page-shell {
+    @apply relative overflow-hidden;
+  }
+
+  .page-shell::before {
+    content: '';
+    @apply fixed inset-0 pointer-events-none;
+    background:
+      radial-gradient(circle at 15% 15%, rgba(207, 169, 93, 0.10), transparent 30%),
+      radial-gradient(circle at 85% 20%, rgba(245, 158, 11, 0.07), transparent 24%),
+      radial-gradient(circle at 50% 100%, rgba(16, 185, 129, 0.05), transparent 28%);
+  }
+
+  .glass-panel {
+    @apply rounded-2xl border border-defi-border bg-defi-glass backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.35)];
+  }
+
+  .section-panel {
+    @apply rounded-3xl border border-defi-border bg-[linear-gradient(180deg,rgba(36,28,20,0.88),rgba(20,17,13,0.92))] backdrop-blur-xl shadow-[0_30px_80px_rgba(0,0,0,0.38)];
+  }
+
+  .metric-card {
+    @apply rounded-2xl border border-defi-border bg-[linear-gradient(180deg,rgba(36,28,20,0.92),rgba(22,18,14,0.94))] p-6 shadow-[0_20px_50px_rgba(0,0,0,0.3)] transition duration-200 hover:-translate-y-0.5 hover:border-defi-borderStrong;
+  }
+
+  .eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-defi-borderStrong bg-white/5 px-4 py-2 text-[11px] font-mono uppercase tracking-[0.24em] text-defi-beige;
+  }
+
+  .button-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#e5c98033] bg-[linear-gradient(135deg,#f1cc7a,#cfa95d)] px-5 py-3 font-semibold text-defi-ink shadow-[0_10px_30px_rgba(207,169,93,0.28)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(207,169,93,0.36)];
+  }
+
+  .button-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-defi-borderStrong bg-white/5 px-5 py-3 font-medium text-defi-cream transition duration-200 hover:-translate-y-0.5 hover:border-defi-gold/60 hover:bg-white/[0.08];
+  }
+
+  .input-chrome {
+    @apply rounded-xl border border-defi-border bg-[#0f1319] px-4 py-3 text-white placeholder:text-defi-muted focus:border-defi-gold/60 focus:ring-2 focus:ring-defi-gold/20;
+  }
+
+  .table-shell {
+    @apply overflow-hidden rounded-3xl border border-defi-border bg-[linear-gradient(180deg,rgba(36,28,20,0.90),rgba(20,17,13,0.94))] shadow-[0_28px_72px_rgba(0,0,0,0.38)];
+  }
+
+  .table-row-hover {
+    @apply transition-colors duration-150 hover:bg-[#241e17];
+  }
+
+  .code-shell {
+    @apply rounded-2xl border border-defi-border bg-[#0d1116] shadow-inner shadow-black/20;
+  }
+
+  .skeleton-bar {
+    background: linear-gradient(90deg, rgba(255,255,255,0.04) 20%, rgba(207,169,93,0.14) 50%, rgba(255,255,255,0.04) 80%);
+    background-size: 200% 100%;
+    @apply animate-sheen rounded-lg;
+  }
 }
