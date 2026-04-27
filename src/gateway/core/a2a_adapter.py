@@ -1,5 +1,4 @@
-import json
-import mcp.types as types
+from core.runtime_contract import agent_card_payload, support_matrix_payload
 
 class A2AAdapter:
     """
@@ -15,21 +14,10 @@ class A2AAdapter:
         Returns the official A2A Agent Card.
         Typically served at /.well-known/agent.json
         """
-        return {
-            "a2a_version": "1.0",
-            "agent_id": self.agent_id,
-            "name": "Universal Transaction Gateway",
-            "description": "High-security payment and transaction node for AI agents.",
-            "skills": self.capabilities,
-            "endpoints": {
-                "mcp": "/mcp",
-                "a2a_rpc": "/a2a-rpc"
-            },
-            "security": {
-                "type": "Ed25519",
-                "verification_key": "TODO_FETCH_FROM_IDENTITY_MANAGER"
-            }
-        }
+        card = agent_card_payload()
+        card["agent_id"] = self.agent_id
+        card["skills"] = self.capabilities
+        return card
 
     async def handle_a2a_request(self, method: str, params: dict) -> dict:
         """
@@ -37,7 +25,10 @@ class A2AAdapter:
         Allows other Google A2A agents to query this gateway.
         """
         if method == "get_capabilities":
-            return {"capabilities": self.capabilities}
+            return {
+                "capabilities": self.capabilities,
+                "support_tiers": support_matrix_payload(),
+            }
         elif method == "ping":
             return {"status": "pong"}
         
