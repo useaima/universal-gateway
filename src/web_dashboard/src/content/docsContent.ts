@@ -46,42 +46,129 @@ export const docsPages: DocsPage[] = [
     label: 'Overview',
     group: 'Getting Started',
     eyebrow: 'UTG 2026.4',
-    title: 'A Base-first control layer for agentic finance',
+    title: 'An open-source MCP gateway for agentic finance',
     summary:
-      'UTG lets AI systems propose financial actions without ever receiving raw wallet custody, then routes Base-native auth, approvals, policy checks, and audit evidence through a single operational surface.',
+      'UTG is a self-hosted control layer between agent intent and real-value execution, with HITL always enforced and Base/Ethereum as the first-class rails.',
     hero:
-      'Aima Universal Transaction Gateway is the Base-first settlement control plane between autonomous software and real-value execution.',
+      'The gateway is designed for operators who want automation to stay useful without letting the model turn into a secret vault.',
     sections: [
       {
-        id: 'what-utg-solves',
-        title: 'What UTG solves',
+        id: 'what-utg-is',
+        title: 'What UTG is',
         body: [
-          'AI agents are increasingly capable of taking action, but direct access to wallets, payment APIs, and internal finance systems creates unacceptable custody risk.',
-          'UTG inserts a programmable enforcement layer between agent reasoning and settlement so automation stays useful while human trust boundaries stay intact, even as the product shifts toward Base-native auth and payments.',
+          'UTG exposes a gateway-as-a-service pattern, but it is delivered as open-source software first. Operators self-host it, connect their preferred agent client through MCP, and keep the control boundary in their own environment.',
+          'The practical result is simple: your agent proposes actions, the gateway applies policy and approval rules, and only approved actions reach settlement.',
         ],
         bullets: [
-          'Base-first, non-custodial execution posture',
-          'Human-in-the-loop interrupts for high-risk actions',
-          'Consistent logging, replay protection, and policy visibility',
+          'OpenClaw, Claude Desktop, and custom MCP clients are the primary integration targets',
+          'Telegram, Slack, and other chat surfaces are treated as operator channels layered on top of the gateway',
+          'Base and Ethereum are executable rails; Bitcoin and Solana are observer/read-only rails for now',
         ],
         visual: 'trust-map',
       },
       {
-        id: 'protocol-pillars',
-        title: 'Protocol pillars',
+        id: 'public-contract',
+        title: 'The public contract',
         body: [
-          'The public experience is designed around three promises: absolute safety, durable execution, and institutional observability.',
-          'Those promises map directly to strict HITL approval, idempotent lifecycle handling, and auditable transaction records republished into the live dashboard.',
-        ],
-        bullets: [
-          'Safety Sandwich for approval enforcement and domain controls',
-          'Execution wrapper and idempotency manager for reliable replay handling',
-          'Realtime operations surface backed by Firebase Realtime Database',
+          'Real users should not have to guess what is stable. The README, docs site, A2A card, and raw skill artifact all describe the same product contract.',
+          'That contract is MCP-first integration, enforced HITL on value-moving actions, Base/Ethereum execution, and explicit maturity labels for everything else.',
         ],
         callout: {
           tone: 'note',
-          title: 'Where to start',
-          body: 'If you are evaluating the product for the first time, read Architecture next, then Auth and Onboarding, then Human Approval Flow.',
+          title: 'The truthful release lens',
+          body: 'The point of this release is not to make every idea sound production-ready. It is to make the stable path unmistakably clear.',
+        },
+      },
+    ],
+  },
+  {
+    slug: 'support-matrix',
+    label: 'Support Matrix',
+    group: 'Getting Started',
+    eyebrow: 'Release Truth',
+    title: 'What is stable, what is beta, and what is still experimental',
+    summary:
+      'Use the support matrix before integrating the gateway into a real operator workflow.',
+    hero:
+      'UTG separates stable execution surfaces from beta and experimental capabilities so operators can adopt it without guessing which parts are battle-ready.',
+    sections: [
+      {
+        id: 'stable-surface',
+        title: 'Stable surface',
+        body: [
+          'The stable surface is the part we expect real users to rely on today: Base and Ethereum transfers, HITL approval enforcement, MCP connectivity, idempotent retries, and dashboard telemetry.',
+          'These flows are the ones that should drive your first production integration and your first support playbooks.',
+        ],
+        bullets: [
+          'request_eth_transfer_reliable',
+          'submit_signature_share',
+          'get_a2a_agent_card',
+          'live dashboard telemetry through Firebase RTDB',
+        ],
+        callout: {
+          tone: 'success',
+          title: 'Stable means operator-safe',
+          body: 'Stable does not mean no risk. It means the gateway has a truthful control boundary, documented prerequisites, and a runtime contract that matches the docs.',
+        },
+      },
+      {
+        id: 'beta-and-experimental',
+        title: 'Beta and experimental surfaces',
+        body: [
+          'Commerce and browser handover remain beta because they depend on configured providers and operator infrastructure. UTG will not invent successful search results or fake live handover sessions when those providers are missing.',
+          'M-Pesa remains experimental until provider credentials, callback signing, and webhook runbooks are production-grade.',
+        ],
+        bullets: [
+          'beta: search_and_compare, request_order, request_human_handover',
+          'experimental: mpesa_3_skill-backed flows and fiat-adjacent payment rails',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'self-hosting',
+    label: 'Self-Hosting',
+    group: 'Getting Started',
+    eyebrow: 'Operator Setup',
+    title: 'Install the gateway, wire the env, and validate the runtime',
+    summary:
+      'The self-hosted operator path is the canonical deployment story for UTG today.',
+    hero:
+      'Operators should be able to bootstrap the stable gateway locally, understand what is missing for beta features, and validate the environment before connecting an agent.',
+    sections: [
+      {
+        id: 'minimum-env',
+        title: 'Minimum environment for stable usage',
+        body: [
+          'The runtime validator checks the same support tiers the docs describe. For stable Base/Ethereum execution, you need a gateway passcode, treasury address, and RPC connectivity.',
+          'Do not treat optional beta or experimental env vars as mandatory for a stable release. They only matter when you want those capabilities.',
+        ],
+        code: {
+          label: 'Stable gateway env',
+          language: 'bash',
+          content:
+            'GATEWAY_PASSCODE=...\nBASE_PRIVATE_KEY=0x...\nETHEREUM_PRIVATE_KEY=0x...\nBASE_RPC_URL=https://mainnet.base.org\nETHEREUM_RPC_URL=https://mainnet.gateway.tenderly.co/public\nTREASURY_ADDRESS=0x...\nAIMA_API_KEY=...\nFIREBASE_DATABASE_URL=...\nFIREBASE_PROJECT_ID=...',
+        },
+      },
+      {
+        id: 'optional-feature-env',
+        title: 'Optional env for beta and experimental surfaces',
+        body: [
+          'Commerce and browser handover should only be enabled when the operator has configured a real provider path. The gateway now fails fast when those provider env vars are absent.',
+          'Experimental rails such as M-Pesa have their own provider envelope and should remain off until the callback and webhook story is fully provisioned.',
+        ],
+        bullets: [
+          'COMMERCE_SEARCH_PROVIDER',
+          'COMMERCE_CATALOG_ENDPOINT',
+          'ALLOWED_DOMAINS',
+          'BROWSER_HANDOVER_URL',
+          'BROWSERBASE_API_KEY and BROWSERBASE_PROJECT_ID when you use Browserbase',
+          'MPESA_API_SECRET, MPESA_SHORTCODE, MPESA_CALLBACK_URL',
+        ],
+        callout: {
+          tone: 'warning',
+          title: 'Self-hosted first means fail fast',
+          body: 'The gateway should tell the operator exactly which provider env vars are missing instead of pretending the capability is available.',
         },
       },
     ],
@@ -90,86 +177,38 @@ export const docsPages: DocsPage[] = [
     slug: 'architecture',
     label: 'Architecture',
     group: 'Protocol',
-    eyebrow: 'Protocol Topology',
-    title: 'How the gateway sits between agents, policy, and execution',
+    eyebrow: 'Control Plane',
+    title: 'How UTG sits between agent intent, policy, approval, and execution',
     summary:
-      'UTG acts as an execution control membrane: inbound intent comes from an agent, policy and approval checks run locally, then only approved actions reach settlement rails.',
+      'The runtime is layered so no single automation step can silently bypass the operator.',
     hero:
-      'The system is intentionally layered so that no single automation step can bypass approval, policy, or post-fact audit evidence.',
+      'Agent intent enters through MCP, the gateway evaluates policy and HITL, and only approved actions reach settlement rails or provider-backed side channels.',
     sections: [
       {
-        id: 'layered-control-plane',
-        title: 'Layered control plane',
+        id: 'service-boundaries',
+        title: 'Service boundaries',
         body: [
-          'The core architecture separates agent intent, policy evaluation, approval requirements, and actual execution so the platform can halt risky actions before any value moves.',
-          'This layering is what allows UTG to remain non-custodial while still supporting agent-initiated workflows.',
+          'The current runtime separates the MCP server, tool registry, approval path, execution wrapper, x402 challenge contract, and receipt publication.',
+          'Those boundaries matter because they let the stable operator path stay simple while beta and experimental adapters remain honest about their prerequisites.',
         ],
         bullets: [
-          'Agent request intake',
-          'Policy and allowlist evaluation',
-          'Approval and signature handling',
-          'Execution wrapper and durable lifecycle logging',
+          'MCP server layer',
+          'Tool and skill registry',
+          'Approval and HITL service',
+          'Execution and idempotency wrapper',
+          'x402 payment challenge contract',
+          'Audit and RTDB publisher',
         ],
         visual: 'architecture',
       },
       {
-        id: 'safety-sandwich',
-        title: 'Safety Sandwich',
+        id: 'network-model',
+        title: 'Normalized network model',
         body: [
-          'The Safety Sandwich is the protocol rule that forces sensitive actions through explicit human review instead of silent autonomous settlement.',
-          'The gateway can halt, request out-of-band confirmation, and only then resume execution with signed evidence in the audit trail.',
+          'The gateway now treats network naming consistently across docs and runtime: Base and Ethereum are executable, Bitcoin and Solana are observed.',
+          'This keeps the public contract clear for both operators and agents, especially when one UI shows multiple chains but only some of them are truly writable.',
         ],
-        bullets: [
-          'Interrupt before settlement',
-          'Expose agent reasoning for review',
-          'Require positive approval for continuation',
-        ],
-        visual: 'safety-sandwich',
-      },
-    ],
-  },
-  {
-    slug: 'auth-onboarding',
-    label: 'Auth & Onboarding',
-    group: 'Getting Started',
-    eyebrow: 'Identity Flow',
-        title: 'Base-native auth, web fallback, and guided setup',
-    summary:
-      'The frontend now supports wallet-first Base sessions alongside Firebase fallback, then resumes operators from Firestore progress flags so they continue exactly where they stopped.',
-    hero:
-      'Identity is mode-aware: Base sessions stay wallet-led, web sessions can still use Firebase, and onboarding captures the operator context the gateway needs.',
-    sections: [
-      {
-        id: 'welcome-entry',
-        title: 'Welcome entry',
-        body: [
-          'Users start from a split welcome surface with Sign in with Base, Google, or email/password. Inside the Base App, the wallet-native path is the preferred experience.',
-          'The landing page remains public, while the welcome route handles wallet auth, fallback credentials, and verification guidance in the same browser window.',
-        ],
-        visual: 'auth-flow',
-      },
-      {
-        id: 'verification-layers',
-        title: 'Verification layers',
-        body: [
-          'Base-native sessions rely on SIWE-style wallet verification and then mint or resume the same backend account state through Firebase-backed progress records.',
-          'Outside the Base App, Firebase email verification still routes back into the app. Progress is recorded in Firestore so users do not repeat completed steps.',
-        ],
-        bullets: [
-          'No email or phone verification in the preferred Base App flow',
-          'Returning operators resume from their first incomplete step',
-          'Onboarding completes before dashboard entry regardless of auth mode',
-        ],
-        code: {
-          label: 'Client environment',
-          language: 'bash',
-          content: `VITE_FIREBASE_API_KEY=...\nVITE_FIREBASE_AUTH_DOMAIN=...\nVITE_FIREBASE_PROJECT_ID=...\nVITE_FIREBASE_DATABASE_URL=...\nVITE_RECAPTCHA_SITE_KEY=...\nVITE_WALLETCONNECT_PROJECT_ID=...\nVITE_BASE_PAY_RECEIVER=0x...\nVITE_BASE_BOOTSTRAP_USDC=10.00`,
-        },
-        callout: {
-          tone: 'warning',
-          title: 'Return path',
-          body: 'Base sessions should stay inside the app experience. Web fallback verification links should still return to the same deployment origin so users resume the flow without losing state.',
-        },
+        bullets: ['execution: base, ethereum', 'observed: bitcoin, solana'],
       },
     ],
   },
@@ -177,38 +216,40 @@ export const docsPages: DocsPage[] = [
     slug: 'human-approval-flow',
     label: 'Human Approval Flow',
     group: 'Operations',
-    eyebrow: 'Approval Operations',
-    title: 'How high-risk actions pause, explain themselves, and resume',
+    eyebrow: 'HITL',
+    title: 'How risky actions halt, wait, and resume',
     summary:
-      'Approval is not a generic modal. UTG carries the agent request, the policy reason, and the final disposition through a single transaction record.',
+      'HITL is not a cosmetic modal. It is the core settlement boundary for the gateway.',
     hero:
-      'The approval system is built so an operator can understand why the agent asked, what policy boundary triggered the halt, and what happened next.',
+      'A value-moving action should be able to stop cleanly, expose its reasoning, accept a valid operator approval share exactly once, and then resume without duplicate settlement.',
     sections: [
       {
-        id: 'request-to-review',
-        title: 'Request to review path',
+        id: 'halt-and-resume',
+        title: 'Halt and resume model',
         body: [
-          'When a transaction crosses a safety threshold, the gateway records the intent, marks it pending, and exposes the request in the live dashboard.',
-          'Operators can inspect the reasoning, review the amount and target, and approve or halt the flow with a durable audit record.',
+          'When a protected transfer is requested, the gateway creates or reuses a pending transaction record. The agent sees that as a pending or halted state, asks the operator for approval, and then calls submit_signature_share.',
+          'Once the approval share is recorded, the agent retries the original transfer call. The gateway resumes the same path instead of creating a second settlement request.',
         ],
         visual: 'request-flow',
+        code: {
+          label: 'Representative MCP flow',
+          language: 'text',
+          content:
+            'request_eth_transfer_reliable -> HALTED\nsubmit_signature_share -> FULLY_SIGNED\nrequest_eth_transfer_reliable -> SUCCESS',
+        },
       },
       {
-        id: 'status-model',
-        title: 'Status model',
+        id: 'approval-rules',
+        title: 'Approval rules',
         body: [
-          'UI statuses are simplified for operators: Pending Review, Completed, and Blocked. Underneath, the system preserves the raw execution state for deeper audits.',
-          'This lets the public dashboard remain readable without throwing away low-level protocol detail.',
+          'Approval is always enforced for sensitive actions, and the passcode must be present in the environment. The runtime no longer falls back to a pretend default code in production-like paths.',
+          'This keeps the operator story honest: if the gateway is not configured to accept approval shares, it tells you directly.',
         ],
-        bullets: [
-          'Pending Review for signature or intermediate approval states',
-          'Completed for verified or settled execution states',
-          'Blocked for rejected, failed, or halted states',
-        ],
-        code: {
-          label: 'Representative transaction shape',
-          language: 'json',
-          content: `{\n  "id": "txn_9ab31c2f",\n  "statusUi": "Pending Review",\n  "reasoning": "Detected a requested transfer above the operator threshold.",\n  "gas": "0.0031 ETH",\n  "timeline": ["REQUESTED", "PENDING_SIGNATURES"]\n}`,
+        visual: 'safety-sandwich',
+        callout: {
+          tone: 'critical',
+          title: 'No hidden bypass',
+          body: 'No plan step in this release weakens the HITL invariant. That is the line the product is built around.',
         },
       },
     ],
@@ -217,41 +258,37 @@ export const docsPages: DocsPage[] = [
     slug: 'realtime-analytics',
     label: 'Realtime Analytics',
     group: 'Operations',
-    eyebrow: 'Live Data',
-    title: 'From SQLite lifecycle logs to live dashboard metrics',
+    eyebrow: 'Telemetry',
+    title: 'How gateway lifecycle logs become a live operator dashboard',
     summary:
-      'The gateway republishes approval and execution lifecycle data into Firebase Realtime Database so the operations dashboard, gas cards, and portfolio views update without reloads.',
+      'The web dashboard subscribes to the same normalized lifecycle data the gateway writes during real execution.',
     hero:
-      'The dashboard is fed from the same lifecycle artifacts the protocol already writes during execution, plus live chain reads and observer-backed portfolio records.',
+      'Telemetry should explain what the gateway actually did, not show a pretty shell disconnected from the protocol.',
     sections: [
       {
-        id: 'publisher-path',
-        title: 'Publisher path',
+        id: 'publisher-structure',
+        title: 'Publisher structure',
         body: [
-          'Pending approvals originate in the HITL transaction log, while execution lifecycle state comes from the audit log. A Firebase Admin publisher reads those sources and writes a normalized live tree.',
-          'The frontend subscribes to summary, throughput, and transaction nodes directly from Realtime Database.',
+          'Pending approvals originate in the HITL database and execution lifecycle events originate in the signed audit log. A Firebase Admin publisher normalizes those sources into summary, throughput, and transaction trees.',
+          'The dashboard subscribes to those nodes directly so overview, portfolio context, and transaction review all reflect the same underlying lifecycle.',
         ],
         visual: 'analytics-pipeline',
         bullets: [
           'dashboard_live/summary',
           'dashboard_live/throughput_30d',
           'dashboard_live/transactions/{transactionId}',
-          'portfolio_live/summary and portfolio_live/assets/{assetId}',
+          'portfolio_live/summary',
+          'portfolio_live/assets/{assetId}',
           'gas_live/{chain}',
         ],
       },
       {
-        id: 'operator-surface',
-        title: 'Operator surface',
+        id: 'truthful-metrics',
+        title: 'Truthful metrics',
         body: [
-          'Overview shows protocol volume, active agents, pending approvals, and throughput. Transactions shows live rows with status badges, reasoning previews, and expandable payload details.',
-          'Portfolio resolves Base and Ethereum balances directly from live RPC reads, then layers in observer-backed Bitcoin and Solana balances whenever the chain observer has published them.',
+          'Stable metrics should only represent real lifecycle data. Unsupported balances or unpriced assets should remain visibly unpriced instead of falling back to fake fiat values.',
+          'That same rule applies to operator copy. If a feature is still beta or experimental, the dashboard and docs should say so clearly.',
         ],
-        callout: {
-          tone: 'success',
-          title: 'What changed',
-          body: 'The dashboard now behaves like a Base-native operations surface with live auth, payments, gas, and execution telemetry while preserving the existing gateway control logic.',
-        },
       },
     ],
   },
@@ -259,43 +296,222 @@ export const docsPages: DocsPage[] = [
     slug: 'agent-integration',
     label: 'Agent Integration',
     group: 'Reference',
-    eyebrow: 'MCP + Skill',
-    title: 'Connect agents without surrendering control',
+    eyebrow: 'MCP First',
+    title: 'Connect OpenClaw, Claude, or a custom agent without giving away wallet custody',
     summary:
-      'UTG exposes a clear integration story for agent systems: connect to the gateway, obey the approval contract, and treat the protocol as the settlement authority.',
+      'The primary product path is MCP integration, not a special chat UI or a hidden managed service.',
     hero:
-      'Agents should see the gateway as a mediated execution partner, not a raw secret store.',
+      'Treat the gateway as a mediated settlement authority. The agent proposes, the gateway governs, and the operator remains in control.',
     sections: [
       {
         id: 'connection-model',
         title: 'Connection model',
         body: [
-          'The gateway is designed to appear as a server in an MCP-style agent configuration. The agent asks for actions, receives halts or approvals, and retries through a consistent interface.',
-          'The `skill.md` reference remains available as a raw artifact for agent-side discovery and instruction loading, while Base Pay and x402 can cover different payment surfaces.',
+          'The simplest deployment model is a local or self-hosted MCP server connected over stdio. That works for OpenClaw, Claude Desktop, and most custom agent runtimes that can speak MCP.',
+          'Telegram and similar surfaces are still useful, but they should be thought of as operator channels on top of the gateway rather than a different product contract.',
         ],
         code: {
           label: 'Example MCP server entry',
           language: 'json',
-          content: `{\n  "aima_utg": {\n    "command": "python",\n    "args": ["/absolute/path/to/universal-transaction-gateway/src/gateway/server.py"],\n    "env": {\n      "AIMA_API_KEY": "...",\n      "ETHEREUM_RPC_URL": "..."\n    }\n  }\n}`,
-        },
-        callout: {
-          tone: 'note',
-          title: 'Agent reference',
-          body: 'Link directly to /docs/skill.md from integration tooling when you need the raw skill contract outside the visual docs experience.',
+          content:
+            '{\n  "mcpServers": {\n    "utg-gateway": {\n      "command": "python",\n      "args": ["/absolute/path/to/universal-transaction-gateway/src/gateway/server.py"],\n      "env": {\n        "AIMA_API_KEY": "...",\n        "BASE_RPC_URL": "...",\n        "ETHEREUM_RPC_URL": "...",\n        "TREASURY_ADDRESS": "0x..."\n      }\n    }\n  }\n}',
         },
       },
       {
         id: 'behavioral-contract',
         title: 'Behavioral contract',
         body: [
-          'Agents must be prepared for a halt-and-resume model. Approval-required actions are expected to stop, wait for user confirmation, and continue only after the gateway records the signature share.',
-          'Retries are safe when they preserve the idempotency key and respect the gateway response state.',
+          'Agents must be built around halt-and-resume behavior. A pending approval is an expected state. A provider-missing response is an expected state. Both should be surfaced truthfully to the operator instead of retried blindly.',
+          'The safest retry strategy is to preserve the same request shape and idempotency context whenever the gateway instructs you to retry.',
         ],
         bullets: [
           'Do not assume direct wallet control',
-          'Treat HALTED or pending approval as an expected state',
-          'Reuse transaction identifiers safely across retries',
+          'Do not treat HALTED or pending approval as a crash',
+          'Do not fabricate success if a beta provider is missing',
+          'Do retry the original transfer request after a successful approval share',
         ],
+        callout: {
+          tone: 'note',
+          title: 'Raw agent artifact',
+          body: 'Use /docs/skill.md when you need the compact agent-facing contract outside the visual docs shell.',
+        },
+      },
+    ],
+  },
+  {
+    slug: 'openclaw-integration',
+    label: 'OpenClaw Integration',
+    group: 'Reference',
+    eyebrow: 'OpenClaw',
+    title: 'A straightforward OpenClaw flow with HITL baked in',
+    summary:
+      'OpenClaw is a first-class target because it maps cleanly onto the gateway’s MCP-first contract.',
+    hero:
+      'The best OpenClaw setup is boring in a good way: connect the MCP server, call the stable tools, and let HITL do its job.',
+    sections: [
+      {
+        id: 'openclaw-sequence',
+        title: 'The sequence to implement',
+        body: [
+          'OpenClaw should call request_eth_transfer_reliable, inspect the gateway response, and pause cleanly if approval is required. Once the operator supplies the passcode, OpenClaw calls submit_signature_share and then retries the original transfer request.',
+          'This pattern is intentionally simple because it is the safest way to make sure retries remain idempotent and approval never turns into a duplicate settlement.',
+        ],
+        visual: 'request-flow',
+      },
+      {
+        id: 'operator-channel',
+        title: 'Operator channel guidance',
+        body: [
+          'Telegram or another chat interface can still be the operator-facing surface, but it should be treated as a way to collect approval input, not as a separate execution backend.',
+          'That keeps the trust boundary in the gateway and lets the same OpenClaw integration work across CLI, TUI, and chat surfaces.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'custom-mcp-integration',
+    label: 'Custom MCP Agents',
+    group: 'Reference',
+    eyebrow: 'Custom Runtimes',
+    title: 'Design custom agents around the gateway instead of around raw wallet calls',
+    summary:
+      'A custom agent should see UTG as the settlement layer and policy authority for any value-moving action.',
+    hero:
+      'If you are building your own agent stack, the safest move is to make UTG the tool you call for finance, not an afterthought bolted onto direct wallet access.',
+    sections: [
+      {
+        id: 'minimal-contract',
+        title: 'Minimal contract to implement',
+        body: [
+          'Custom agents need four behaviors: list tools, call stable tools, handle HITL pauses, and respect retry guidance. Everything else can evolve over time.',
+          'A2A discovery is available through get_a2a_agent_card, but MCP remains the primary execution path in this release.',
+        ],
+        code: {
+          label: 'Retry discipline',
+          language: 'text',
+          content:
+            '1. Call a stable tool\n2. If status is HALTED or pending, ask the operator for approval\n3. Call submit_signature_share\n4. Retry the original tool call\n5. Reuse the same transaction context whenever possible',
+        },
+      },
+      {
+        id: 'versioning-and-compatibility',
+        title: 'Versioning and compatibility',
+        body: [
+          'Tool names remain stable in v1. Internal refactors can change how the gateway is organized, but the public tool surface should not break existing OpenClaw or custom-agent configs without an explicit version change.',
+          'That is why the current release refactors the registry and discovery card behind the scenes while keeping the tool names intact.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'payments-x402',
+    label: 'Base Payments & x402',
+    group: 'Reference',
+    eyebrow: 'Payments',
+    title: 'Use Base for user-facing payments and x402 for paid service boundaries',
+    summary:
+      'UTG can sit in front of both user-facing Base payments and agent-to-agent paid service flows.',
+    hero:
+      'The important thing is not to confuse the payment rail with the control rail: UTG remains the enforcement boundary even when Base or x402 handles settlement.',
+    sections: [
+      {
+        id: 'two-payment-patterns',
+        title: 'Two payment patterns',
+        body: [
+          'Base user-facing payments and x402 paid API flows solve different problems. Base is the user settlement surface; x402 is the challenge-and-retry pattern for agent-to-agent access.',
+          'The runtime now uses a single canonical x402 challenge contract so custom agents can parse payment-required states consistently.',
+        ],
+        bullets: [
+          'Base for user-facing USDC and onchain payment events',
+          'x402 for payment-required service boundaries',
+          'Treasury address stays in the gateway config rather than the model context',
+        ],
+      },
+      {
+        id: 'x402-contract',
+        title: 'Canonical x402 contract',
+        body: [
+          'The x402 contract now returns a stable shape with status, headers, payment metadata, and resolve instructions. This gives agents a predictable way to surface the challenge to operators and retry after proof of payment.',
+          'Documentation examples should show both directions: the agent paying for a service and UTG exposing a paid capability.',
+        ],
+        code: {
+          label: 'Representative x402 payload',
+          language: 'json',
+          content:
+            '{\n  "status": "payment_required",\n  "code": 402,\n  "payment": {\n    "rail": "x402",\n    "asset": "USDC",\n    "amount": 10,\n    "network": "base",\n    "recipient": "0x...",\n    "reason": "premium settlement route"\n  },\n  "resolve": {\n    "type": "present_payment_proof_and_retry"\n  }\n}',
+        },
+      },
+    ],
+  },
+  {
+    slug: 'commerce-handover',
+    label: 'Commerce & Handover',
+    group: 'Operations',
+    eyebrow: 'Beta Surface',
+    title: 'Commerce stays beta until providers and browser adapters are real',
+    summary:
+      'UTG no longer fabricates commerce results or fake live handover sessions when the operator has not configured the required runtime.',
+    hero:
+      'The honest version of beta commerce is useful: it tells you exactly what provider is needed and where the operator must step in.',
+    sections: [
+      {
+        id: 'provider-gates',
+        title: 'Provider gates',
+        body: [
+          'search_and_compare expects a configured commerce provider pattern such as an external catalog endpoint or a browser-assisted search process. If the provider is not configured, the tool returns a clear explanation instead of synthetic marketplace results.',
+          'request_order then uses the checkout helper to decide whether browser handover can continue or whether the operator still needs to wire a handover adapter.',
+        ],
+        bullets: [
+          'COMMERCE_SEARCH_PROVIDER',
+          'COMMERCE_CATALOG_ENDPOINT for catalog mode',
+          'ALLOWED_DOMAINS',
+          'BROWSER_HANDOVER_URL',
+        ],
+        callout: {
+          tone: 'warning',
+          title: 'Beta should still be predictable',
+          body: 'Beta does not mean vague. It means the gateway gives a truthful capability boundary and the operator understands the next configuration step.',
+        },
+      },
+      {
+        id: 'browser-handover',
+        title: 'Browser handover',
+        body: [
+          'request_human_handover now expects a configured operator handover URL instead of returning a hardcoded demo page. That keeps the gateway from pretending a live operator session exists when it does not.',
+          'If you want a Browserbase-backed flow, provide a real adapter URL and the relevant provider credentials in your deployment environment.',
+        ],
+      },
+    ],
+  },
+  {
+    slug: 'mpesa-experimental',
+    label: 'M-Pesa Experimental',
+    group: 'Reference',
+    eyebrow: 'Experimental',
+    title: 'Keep M-Pesa behind an explicit experimental label until the callback and webhook path is hardened',
+    summary:
+      'The gateway includes M-Pesa-oriented code paths, but they should not be presented as stable until the provider envelope is real.',
+    hero:
+      'The honest path here is restraint: wire the credentials, callback signing, and webhook routing first, then promote the surface when the operator runbook is ready.',
+    sections: [
+      {
+        id: 'what-is-missing',
+        title: 'What still separates it from a stable surface',
+        body: [
+          'A production-grade M-Pesa integration needs provider credentials, signed callback verification, webhook routing, failure handling, and operator troubleshooting guidance. The gateway now makes those requirements explicit instead of pretending the rail is always available.',
+          'Until those pieces are provisioned, the runtime returns an unavailable state with the missing environment variables called out directly.',
+        ],
+        bullets: [
+          'MPESA_API_SECRET',
+          'MPESA_SHORTCODE',
+          'MPESA_CALLBACK_URL',
+          'provider callback signing and webhook runbook',
+        ],
+        callout: {
+          tone: 'critical',
+          title: 'Experimental means opt-in',
+          body: 'Keep M-Pesa disabled in production unless your operators can answer the full callback and reconciliation story end to end.',
+        },
       },
     ],
   },
@@ -303,40 +519,36 @@ export const docsPages: DocsPage[] = [
     slug: 'security-compliance',
     label: 'Security & Compliance',
     group: 'Protocol',
-    eyebrow: 'Controls',
-    title: 'Durable safeguards, auditability, and operational trust',
+    eyebrow: 'Trust Boundaries',
+    title: 'Why the gateway is strict about approvals, retries, and evidence',
     summary:
-      'UTG prioritizes controls that reduce real execution risk: idempotency, rollback visibility, policy enforcement, and cryptographically meaningful audit records.',
+      'The main trust promise is not “the AI is smart enough.” It is “the system makes unsafe settlement paths harder.”',
     hero:
-      'Institutional trust comes from being able to explain what happened, why it happened, and what prevented the unsafe path.',
+      'Security here means deterministic boundaries, durable evidence, and enough audit context that a real operator can explain what happened after the fact.',
     sections: [
       {
-        id: 'idempotency-and-recovery',
+        id: 'idempotency',
         title: 'Idempotency and recovery',
         body: [
-          'When a client retries a request, the gateway uses deterministic execution controls to prevent duplicate settlement. The same transaction path can be inspected, resumed, or finalized without multiplying risk.',
-          'Rollback and cleanup logic keep temporary approval artifacts from lingering after completion.',
+          'The execution wrapper and idempotency manager are what keep retries from turning into duplicate settlement. The same request can be resumed and audited without multiplying risk.',
+          'This is why the docs keep pushing agents to retry the original tool call after approval rather than inventing a new request shape.',
         ],
         visual: 'rollback-flow',
       },
       {
-        id: 'compliance-posture',
-        title: 'Compliance posture',
+        id: 'audit-posture',
+        title: 'Audit posture',
         body: [
-          'The protocol aims for strong local auditability and non-repudiation rather than central custody. This supports internal governance, incident review, and regulated operating expectations.',
-          'Onchain metadata such as transaction details, contract addresses, event receipts, and wallet signatures are paired with offchain metadata like docs links, payload context, and operator notes so the trail stays explainable.',
+          'UTG preserves both onchain and offchain metadata so an operator can reconstruct the full story: request context, approval state, lifecycle events, contract data, and external references.',
+          'That evidence matters for internal governance, incident response, and simply being able to trust what the agent did in your name.',
         ],
         bullets: [
-          'Human-verifiable approval trail',
-          'Local audit storage as system record',
-          'Clear boundaries between agent request and value movement',
-          'Onchain and offchain metadata preserved together',
+          'approval trail',
+          'signed lifecycle log',
+          'transaction payload context',
+          'onchain receipt references',
+          'offchain operator notes and docs links',
         ],
-        callout: {
-          tone: 'critical',
-          title: 'Control boundary',
-          body: 'The gateway does not eliminate operator responsibility. It provides enforced pauses, clearer evidence, and safer defaults so operators can make informed decisions.',
-        },
       },
     ],
   },

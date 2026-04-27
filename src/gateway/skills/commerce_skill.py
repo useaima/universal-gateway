@@ -1,23 +1,22 @@
 import os
-import asyncio
 from typing import List
 import mcp.types as types
 from core.skill_base import SkillBase
-from core.browser_manager import BrowserManager, human_delay
-from core.safety_policy import SafetyPolicy
 from core.audit_logger import AuditLogger
+from skills.checkout_skill import CheckoutSkill
 
 class CommerceSkill(SkillBase):
     """
-    Handles 'Real Commerce' (Search, Compare, and Checkout).
-    Evolves from the basic checkout tool to a full shopping assistant.
+    Browser-assisted commerce helpers.
+    This capability remains beta until a search provider and browser handover
+    adapter are configured by the operator.
     """
     
     def __init__(self):
-        self.browser_manager = BrowserManager()
-        self.safety_policy = SafetyPolicy()
         self.audit_logger = AuditLogger()
-        self.api_key = os.environ.get("CAPSOLVER_API_KEY")
+        self.search_provider = os.environ.get("COMMERCE_SEARCH_PROVIDER", "").strip()
+        self.catalog_endpoint = os.environ.get("COMMERCE_CATALOG_ENDPOINT", "").strip()
+        self.checkout = CheckoutSkill()
 
     @property
     def name(self) -> str:
@@ -27,7 +26,7 @@ class CommerceSkill(SkillBase):
         return [
             types.Tool(
                 name="search_and_compare",
-                description="Search for an item across multiple platforms (Amazon, eBay) and compare prices.",
+                description="Search for an item using the configured commerce provider and return an operator-safe summary.",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -39,7 +38,7 @@ class CommerceSkill(SkillBase):
             ),
             types.Tool(
                 name="request_order",
-                description="Finalize the order for a specific item found during comparison.",
+                description="Prepare a browser-assisted order handover for a specific item selected by the operator.",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -56,23 +55,66 @@ class CommerceSkill(SkillBase):
         if name == "search_and_compare":
             return await self._search_and_compare(arguments)
         elif name == "request_order":
-            return [types.TextContent(type="text", text="Order Requested. Pending Multi-Party Approval...")]
+            return await self._request_order(arguments)
         return []
 
     async def _search_and_compare(self, args: dict) -> List[types.TextContent]:
         item = args["item_name"]
         max_p = args["max_price"]
-        
-        # Simulation of cross-platform search
-        # In production, this would navigate to Amazon/eBay sequentially
-        results = [
-            {"platform": "Amazon", "price": max_p * 0.9, "url": f"https://amazon.com/s?k={item}"},
-            {"platform": "eBay", "price": max_p * 0.85, "url": f"https://ebay.com/sch/{item}"}
-        ]
-        
-        summary = f"Found {len(results)} matches for '{item}' within ${max_p}:\n"
-        for r in results:
-            summary += f"- {r['platform']}: ${r['price']} ({r['url']})\n"
-        
-        self.audit_logger.log_action("search_and_compare", args, "SUCCESS")
+
+        if not self.search_provider:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=(
+                        "Commerce search is a beta capability and is disabled until "
+                        "COMMERCE_SEARCH_PROVIDER is configured. Supported operator patterns are "
+                        "an external catalog/search provider or browser-assisted review."
+                    ),
+                )
+            ]
+
+        if self.search_provider == "catalog" and not self.catalog_endpoint:
+            return [
+                types.TextContent(
+                    type="text",
+                    text=(
+                        "COMMERCE_SEARCH_PROVIDER is set to 'catalog', but COMMERCE_CATALOG_ENDPOINT is missing. "
+                        "Configure the provider endpoint, then retry the same request."
+                    ),
+                )
+            ]
+
+        if self.search_provider == "catalog":
+            summary = (
+                "Commerce search is configured for an external catalog provider.\n"
+                f"Provider endpoint: {self.catalog_endpoint}\n"
+                f"Requested item: {item}\n"
+                f"Budget cap: ${max_p}\n"
+                "The agent should forward this request to the configured catalog service and bring the ranked results "
+                "back through the operator channel for review."
+            )
+        elif self.search_provider == "browser":
+            summary = (
+                "Commerce search is configured for browser-assisted review.\n"
+                f"Requested item: {item}\n"
+                f"Budget cap: ${max_p}\n"
+                "Use the browser runtime or handover adapter to inspect whitelisted merchants, then present "
+                "operator-approved candidates before attempting checkout."
+            )
+        else:
+            summary = (
+                f"Unknown COMMERCE_SEARCH_PROVIDER '{self.search_provider}'. "
+                "Expected 'catalog' or 'browser'."
+            )
+
+        self.audit_logger.log_action("search_and_compare", args, "CONFIGURED")
+        return [types.TextContent(type="text", text=summary)]
+
+    async def _request_order(self, args: dict) -> List[types.TextContent]:
+        url = args["url"]
+        price_text = args["price_text"]
+        items = args["items"]
+        summary = self.checkout.build_handover_summary(url=url, price_text=price_text, items=items)
+        self.audit_logger.log_action("request_order", args, "PENDING_HANDOVER")
         return [types.TextContent(type="text", text=summary)]

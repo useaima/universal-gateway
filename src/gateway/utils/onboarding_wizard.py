@@ -11,7 +11,7 @@ def main():
     clear_screen()
     print("==========================================")
     print("   🏦 Welcome to Aima UTG Onboarding")
-    print("   The Programmable Financial Protocol")
+    print("   Self-Hosted MCP Gateway Setup")
     print("==========================================\n")
     
     print("This guided wizard will fully configure your Gateway.")
@@ -29,15 +29,20 @@ def main():
 
     # 2. Security Setup
     print("\n[2/5] ACCESS SECURITY (HITL)")
-    passcode = getpass.getpass("Set a Gateway Passcode (You will give this to your agent on Telegram/Slack to authorize transactions): ")
+    passcode = getpass.getpass(
+        "Set a Gateway Passcode (your agent will need this operator approval code whenever HITL is enforced): "
+    )
     if not passcode:
-        passcode = "123456"
-        print(f"⚠️ No passcode entered. Using default: {passcode}")
+        print("❌ A gateway passcode is required for a truthful production setup.")
+        sys.exit(1)
 
     # 3. Wallet Connection
     print("\n[3/5] WALLET CONNECTION")
-    print("Your agent needs an Ethereum Wallet to execute DeFi transfers.")
-    eth_key = getpass.getpass("Enter your Ethereum Wallet Private Key (Or press Enter to auto-generate a secure burner wallet): ")
+    print("UTG executes value-moving transactions on Base and Ethereum.")
+    base_key = getpass.getpass(
+        "Enter your Base / EVM Wallet Private Key (or press Enter to auto-generate a secure burner wallet): "
+    )
+    eth_key = base_key
     if not eth_key.strip():
         try:
             from eth_account import Account
@@ -55,17 +60,20 @@ def main():
     print("\n[4/5] API CONNECTIVITY")
     from core.api_key_manager import ApiKeyManager
     akm = ApiKeyManager()
-    api_key = akm.generate_key("OpenClaw-Default")
+    api_key = akm.generate_key("UTG-Operator-Default")
     print(f"✅ Generated Aima API Key: {api_key}")
-    print("   (This key ensures secure authorized communication with your agent).")
+    print("   (This key secures communication between your MCP client and the gateway).")
 
     # 5. Generate .env
     print("\n[5/5] WRITING CONFIGURATION")
     env_content = f"""# Aima UTG Configuration
 # LEGAL: US E-SIGN ACT ACCEPTED
 GATEWAY_PASSCODE={passcode}
+BASE_PRIVATE_KEY={eth_key}
 ETHEREUM_PRIVATE_KEY={eth_key}
+BASE_RPC_URL=https://mainnet.base.org
 ETHEREUM_RPC_URL=https://mainnet.gateway.tenderly.co/public
+TREASURY_ADDRESS=0xYourTreasuryAddressHere
 AIMA_API_KEY={api_key}
 """
     with open(".env", "w") as f:
@@ -101,9 +109,9 @@ AIMA_API_KEY={api_key}
     print("\n" + "="*42)
     print("🎉 ONBOARDING COMPLETE!")
     print("   1. Start the server: python src/gateway/server.py")
-    print("   2. Chat with your agent on Telegram/Slack.")
+    print("   2. Connect OpenClaw, Claude Desktop, or your custom MCP client.")
+    print("   3. Use Telegram or another chat channel only as the operator surface on top of the gateway.")
     print("==========================================")
 
 if __name__ == "__main__":
     main()
-

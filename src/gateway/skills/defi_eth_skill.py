@@ -14,7 +14,7 @@ from core.execution_wrapper import ExecutionWrapper
 
 class DeFiEthSkill(SkillBase):
     """
-    Upgraded DeFi Ethereum Skill with Reliability Wrapping and Finality Guard.
+    Canonical Base/Ethereum execution skill for stable value-moving transfers.
     """
     def __init__(self):
         self.sandbox = SandboxEngine()
@@ -44,7 +44,7 @@ class DeFiEthSkill(SkillBase):
         return [
             types.Tool(
                 name="request_eth_transfer_reliable",
-                description="Secure ETH transfer with Defensive Wrapper, State Machine logging, and Finality Guard.",
+                description="Secure Base or Ethereum transfer with HITL enforcement, idempotent retries, and lifecycle logging.",
                 inputSchema={
                     "type": "object",
                     "properties": {
@@ -109,7 +109,15 @@ class DeFiEthSkill(SkillBase):
         status = self.hitl.get_status(txn_id)
         
         if status == "PENDING_SIGNATURES":
-            return [types.TextContent(type="text", text=f"⚠️ Transaction {txn_id} is STILL PENDING. You must ask the user for their 6-digit PIN and call 'submit_signature_share'.")]
+            return [
+                types.TextContent(
+                    type="text",
+                    text=(
+                        f"⚠️ Transaction {txn_id} is still pending approval. Ask the operator for their gateway "
+                        "passcode, then call 'submit_signature_share' before retrying this transfer."
+                    ),
+                )
+            ]
 
         if status == "REJECTED":
             return [types.TextContent(type="text", text="❌ User rejected the transaction.")]

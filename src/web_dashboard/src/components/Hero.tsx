@@ -9,25 +9,25 @@ interface HeroProps {
 
 const slides = [
   {
-    label: 'Base-native gateway',
-    title: 'Publish the operator surface on Base without surrendering wallet custody.',
+    label: 'OSS self-hosted gateway',
+    title: 'Connect OpenClaw, Claude, or a custom MCP client without surrendering wallet custody.',
     detail:
-      'UTG keeps AI execution programmable while moving user growth, wallet auth, and settlement toward Base-first flows that stay legible to operators.',
-    metrics: ['Base App compatible', 'Non-custodial control plane', 'Wallet-led operator sessions'],
+      'UTG is an open-source control layer between agent intent and value movement. Operators keep the approval boundary in their own environment while agents still get a clean execution surface.',
+    metrics: ['MCP-first integration', 'Self-hosted operator control', 'Non-custodial by design'],
   },
   {
-    label: 'Payment and policy',
-    title: 'Collect user payments on Base while agent services settle through x402.',
+    label: 'Stable execution',
+    title: 'Run Base and Ethereum transfers through one consistent HITL and idempotency path.',
     detail:
-      'Base Pay covers user-facing USDC flows, while the gateway still preserves threshold-driven approvals, policy reasoning, and auditable execution receipts.',
-    metrics: ['Base Pay for USDC', 'x402 for agent APIs', 'Receipt-ready execution trail'],
+      'The stable path is deliberately narrow: Base and Ethereum execution, enforced approvals, dashboard telemetry, and retry-safe settlement logic that real operators can trust.',
+    metrics: ['Base + Ethereum', 'HITL always enforced', 'Receipt-ready execution trail'],
   },
   {
-    label: 'Multi-chain visibility',
-    title: 'See executable Base and Ethereum rails beside Bitcoin and Solana observer data.',
+    label: 'Truthful support tiers',
+    title: 'Keep commerce in beta and M-Pesa experimental until the providers are actually wired.',
     detail:
-      'The dashboard keeps live Base and Ethereum execution data in the foreground, while Bitcoin and Solana remain read-only visibility networks until adapters are installed.',
-    metrics: ['Live RPC + RTDB data', 'Observer-backed read-only assets', 'Unified operations view'],
+      'UTG now tells the truth about what is stable, what needs a browser or provider adapter, and what should stay off until the runtime is fully provisioned.',
+    metrics: ['Stable, beta, experimental', 'Provider-gated handover', 'No fake marketplace data'],
   },
 ];
 
@@ -53,7 +53,7 @@ export default function Hero({ onOpenAuth }: HeroProps) {
         <div>
           <div className="light-eyebrow mb-8">
             <Shield className="h-4 w-4 text-[#b68b38]" />
-            Human-controlled settlement for autonomous finance
+            Self-hosted settlement control for autonomous finance
           </div>
 
           <h1 className="max-w-4xl text-5xl font-semibold leading-[0.95] text-slate-900 md:text-7xl xl:text-[5.4rem]">
@@ -65,8 +65,8 @@ export default function Hero({ onOpenAuth }: HeroProps) {
           </h1>
 
           <p className="mt-8 max-w-2xl text-base leading-8 text-slate-600 md:text-xl">
-            Aima Protocol turns UTG into a Base-first operator surface for AI agents, crypto payments,
-            human approval gates, and live settlement telemetry across the rails that matter right now.
+            Aima Protocol turns UTG into an MCP-first gateway for real operators: Base and Ethereum execution,
+            human approval gates, live telemetry, and honest support tiers for everything that still needs extra wiring.
           </p>
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
@@ -91,9 +91,9 @@ export default function Hero({ onOpenAuth }: HeroProps) {
               <p className="mt-2 text-sm leading-6 text-slate-500">Deterministic replay protection, policy validation, and domain controls.</p>
             </div>
             <div className="light-card p-5">
-              <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Execution</p>
-              <p className="mt-4 text-3xl font-semibold text-slate-900">Multi-rail</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">EVM-compatible flows, approval resets, and traceable lifecycle visibility.</p>
+              <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Support</p>
+              <p className="mt-4 text-3xl font-semibold text-slate-900">Tiered</p>
+              <p className="mt-2 text-sm leading-6 text-slate-500">Stable Base and Ethereum flows, beta commerce adapters, and explicit experimental rails.</p>
             </div>
           </div>
         </div>
@@ -155,12 +155,12 @@ export default function Hero({ onOpenAuth }: HeroProps) {
                   <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Preview payload</p>
                   <div className="mt-3 grid gap-2 text-sm text-slate-700">
                     <div className="flex items-center justify-between">
-                      <span>Primary auth</span>
-                      <span className="font-mono text-[#b3842f]">Sign in with Base</span>
+                      <span>Primary path</span>
+                      <span className="font-mono text-[#b3842f]">MCP integration</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Payments rail</span>
-                      <span className="font-mono text-[#b3842f]">Base Pay + x402</span>
+                      <span className="font-mono text-[#b3842f]">Base + x402</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Execution scope</span>

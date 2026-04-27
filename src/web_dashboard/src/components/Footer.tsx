@@ -5,9 +5,9 @@ export default function Footer() {
     <footer id="support" className="py-20">
       <div className="mx-auto max-w-7xl px-4 md:px-8">
         <div className="light-panel p-10 text-center">
-          <h3 className="text-3xl font-semibold text-slate-900">Stay close to the protocol</h3>
+          <h3 className="text-3xl font-semibold text-slate-900">Stay close to the gateway contract</h3>
           <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-500">
-            Support, partnership, and developer conversations should feel like part of the same polished product surface.
+            The public repo, the docs site, and the raw agent artifact should all describe the same operator-safe product.
           </p>
 
           <div className="mb-10 mt-10 flex flex-wrap justify-center gap-4">
@@ -28,7 +28,7 @@ export default function Footer() {
             </a>
           </div>
 
-          <p className="text-sm font-medium text-slate-500">© 2026 Aima Protocol. Built for the future of agentic commerce.</p>
+          <p className="text-sm font-medium text-slate-500">© 2026 Aima Protocol. Open-source, self-hosted, and built for real operator control.</p>
         </div>
       </div>
     </footer>
