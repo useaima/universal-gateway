@@ -1,0 +1,35 @@
+{
+  "accountAssociation": {
+    "header": "",
+    "payload": "",
+    "signature": ""
+  },
+  "miniapp": {
+    "version": "1",
+    "name": "Aima Universal Transaction Gateway",
+    "homeUrl": "https://utg.useaima.com",
+    "iconUrl": "https://utg.useaima.com/logo.png",
+    "splashImageUrl": "https://utg.useaima.com/hero_illustration.png",
+    "splashBackgroundColor": "#f7f1e3",
+    "subtitle": "Secure AI transaction routing",
+    "description": "Bridge Web2 AI agents to Web3 execution rails with policy controls, human-in-the-loop approvals, and auditable transaction lifecycles.",
+    "primaryCategory": "finance",
+    "tags": [
+      "defi",
+      "ai",
+      "automation",
+      "base"
+    ],
+    "tagline": "Programmable settlement without surrendering custody",
+    "heroImageUrl": "https://utg.useaima.com/hero_illustration.png",
+    "ogTitle": "Aima Universal Transaction Gateway",
+    "ogDescription": "Programmable financial execution for autonomous AI agents with human-controlled settlement guardrails.",
+    "ogImageUrl": "https://utg.useaima.com/hero_illustration.png",
+    "screenshotUrls": [
+      "https://utg.useaima.com/hero_illustration.png",
+      "https://utg.useaima.com/docs/assets/utg_hero.png",
+      "https://utg.useaima.com/docs/assets/docs_illustration.png"
+    ],
+    "noindex": false
+  }
+}
