@@ -21,7 +21,20 @@ class DeFiEthSkill(SkillBase):
         self.hitl = HITLManager()
         self.revenue = RevenueEngine()
         self.audit_logger = AuditLogger()
-        self.w3 = AsyncWeb3(AsyncHTTPProvider(os.environ.get("ETHEREUM_RPC_URL", "https://mainnet.gateway.tenderly.co/public")))
+        self.network_clients = {
+            "base": AsyncWeb3(
+                AsyncHTTPProvider(
+                    os.environ.get("BASE_RPC_URL", "https://mainnet.base.org")
+                )
+            ),
+            "ethereum": AsyncWeb3(
+                AsyncHTTPProvider(
+                    os.environ.get(
+                        "ETHEREUM_RPC_URL", "https://mainnet.gateway.tenderly.co/public"
+                    )
+                )
+            ),
+        }
 
     @property
     def name(self) -> str:
@@ -37,7 +50,12 @@ class DeFiEthSkill(SkillBase):
                     "properties": {
                         "to_address": {"type": "string"},
                         "amount_eth": {"type": "number"},
-                        "user_id": {"type": "string", "description": "The ID of the human user (Alvins/Alicia)"}
+                        "user_id": {"type": "string", "description": "The ID of the human user (Alvins/Alicia)"},
+                        "network": {
+                            "type": "string",
+                            "description": "Execution network. Supported values: base or ethereum.",
+                            "enum": ["base", "ethereum"],
+                        },
                     },
                     "required": ["to_address", "amount_eth", "user_id"]
                 }
@@ -53,11 +71,17 @@ class DeFiEthSkill(SkillBase):
         user_id = args.get("user_id", "Alvins")
         to_addr = args["to_address"]
         amount = args["amount_eth"]
+        network = str(args.get("network", "base")).lower()
+
+        if network not in self.network_clients:
+            return [types.TextContent(type="text", text=f"❌ Unsupported execution network: {network}.")]
+
+        w3 = self.network_clients[network]
         
         # 1. Check HITL database via deterministic lookup (or create new request)
         db_path = self.hitl.db_path
         import sqlite3, hashlib
-        sig_hash = hashlib.md5(f"{to_addr}_{amount}".encode()).hexdigest()[:8]
+        sig_hash = hashlib.md5(f"{network}_{to_addr}_{amount}".encode()).hexdigest()[:8]
         
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
@@ -68,10 +92,17 @@ class DeFiEthSkill(SkillBase):
                 # CREATING NEW HITL REQUEST
                 conn.execute(
                     "INSERT INTO pending_transactions (id, url, item_details, amount, status, required_signatures) VALUES (?, ?, ?, ?, ?, ?)",
-                    (sig_hash, "ethereum", f"Transfer to {to_addr}", amount, "PENDING_SIGNATURES", '["Alvins_Share"]')
+                    (
+                        sig_hash,
+                        network,
+                        f"Transfer to {to_addr}",
+                        amount,
+                        "PENDING_SIGNATURES",
+                        '["Alvins_Share"]',
+                    )
                 )
                 conn.commit()
-                return [types.TextContent(type="text", text=f"⚠️ TRANSACTION HALTED (Safety Sandwich enforced).\nThis transaction requires manual authorization.\nPlease ask the User on your chat channel to provide their 6-digit Gateway Passcode. Once they reply, call the 'submit_signature_share' tool with transaction_id: '{sig_hash}'.")]
+                return [types.TextContent(type="text", text=f"⚠️ TRANSACTION HALTED (Safety Sandwich enforced).\nThis {network.title()} transaction requires manual authorization.\nPlease ask the User on your chat channel to provide their 6-digit Gateway Passcode. Once they reply, call the 'submit_signature_share' tool with transaction_id: '{sig_hash}'.")]
             
             txn_id, current_status = row
             
@@ -88,45 +119,50 @@ class DeFiEthSkill(SkillBase):
         
         async def step_logic():
             # Attempt to use real wallet if configured
-            pk = os.environ.get("ETHEREUM_PRIVATE_KEY", "")
+            pk = os.environ.get(
+                "BASE_PRIVATE_KEY" if network == "base" else "ETHEREUM_PRIVATE_KEY", ""
+            )
             if pk and pk != "0x0000000000000000000000000000000000000000000000000000000000000000":
                 from eth_account import Account
-                print(f"[Web3] Connecting to real-world node...", file=sys.stderr)
+                print(f"[Web3] Connecting to {network.title()} node...", file=sys.stderr)
                 account_obj = Account.from_key(pk)
                 sender_addr = account_obj.address
                 
-                nonce = await self.w3.eth.get_transaction_count(sender_addr)
-                chain_id = await self.w3.eth.chain_id
+                nonce = await w3.eth.get_transaction_count(sender_addr)
+                chain_id = await w3.eth.chain_id
                 
                 tx = {
                     "nonce": nonce,
                     "to": to_addr,
-                    "value": self.w3.to_wei(amount, "ether"),
+                    "value": w3.to_wei(amount, "ether"),
                     "gas": 21000,
-                    "maxFeePerGas": self.w3.to_wei(20, "gwei"),
-                    "maxPriorityFeePerGas": self.w3.to_wei(2, "gwei"),
+                    "maxFeePerGas": w3.to_wei(20, "gwei"),
+                    "maxPriorityFeePerGas": w3.to_wei(2, "gwei"),
                     "chainId": chain_id
                 }
                 
                 print(f"[Web3] Signing payload for ChainID {chain_id}...", file=sys.stderr)
-                signed_tx = self.w3.eth.account.sign_transaction(tx, pk)
+                signed_tx = w3.eth.account.sign_transaction(tx, pk)
                 
                 print(f"[Web3] Broadcasting transaction...", file=sys.stderr)
-                tx_hash = await self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+                tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
                 final_hash_hex = tx_hash.to_0x_hex()
                 print(f"[Web3] TX Hash: {final_hash_hex}. Waiting for block inclusion...", file=sys.stderr)
                 
                 # Provide real confirmation
                 try:
-                    await self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
-                    conf_needed = 2 if "l2" in self.w3.provider.endpoint_uri.lower() else 6
+                    await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+                    conf_needed = 2 if network == "base" else 6
                 except Exception as e:
                     print(f"[Web3Guard] Warning during receipt polling: {e}", file=sys.stderr)
                     conf_needed = "Unknown"
             else:
-                print(f"[Web3 Mock] Simulating {amount} ETH transfer because no live Private Key is connected.", file=sys.stderr)
+                print(
+                    f"[Web3 Mock] Simulating {amount} ETH transfer on {network.title()} because no live Private Key is connected.",
+                    file=sys.stderr,
+                )
                 final_hash_hex = f"0xMOCK_{sig_hash}"
-                conf_needed = 2 if "l2" in self.w3.provider.endpoint_uri.lower() else 6
+                conf_needed = 2 if network == "base" else 6
                 print(f"[Web3Guard] Waiting for {conf_needed} block confirmations...", file=sys.stderr)
                 for i in range(1, conf_needed + 1):
                     await asyncio.sleep(0.3)
@@ -134,14 +170,14 @@ class DeFiEthSkill(SkillBase):
             # Finalize Statement
             self.audit_logger.log_signed_entry(user_id, "ETH_TRANSFER", {
                 "transaction_id": sig_hash,
-                "agent": "ETH Transfer Runtime",
-                "network": "Ethereum",
+                "agent": f"{network.title()} Transfer Runtime",
+                "network": network.title(),
                 "to": to_addr,
                 "amount": amount,
                 "gas": "21000",
                 "contract": "",
-                "reasoning": "Gateway execution wrapper verified the transfer lifecycle and marked the settlement as complete.",
-                "requested_action": f"Transfer {amount} ETH to {to_addr}",
+                "reasoning": f"Gateway execution wrapper verified the {network.title()} transfer lifecycle and marked the settlement as complete.",
+                "requested_action": f"Transfer {amount} ETH on {network.title()} to {to_addr}",
                 "policy_rule": "Published from the gateway settlement log.",
                 "tx_hash": final_hash_hex,
                 "status": "SETTLED"

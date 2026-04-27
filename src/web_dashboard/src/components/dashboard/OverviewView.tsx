@@ -3,7 +3,16 @@ import { Key, Copy, Activity, Code, TrendingUp, ShieldAlert, Bot, Zap } from 'lu
 import { Area, AreaChart, CartesianGrid, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { onValue, ref } from 'firebase/database';
 import { rtdb } from '../../lib/firebase';
-import { emptySummary, mapSummaryRecord, mapThroughputRecord, type LiveSummary, type ThroughputPoint } from '../../lib/liveDashboard';
+import {
+  emptySummary,
+  mapGasRecord,
+  mapSummaryRecord,
+  mapThroughputRecord,
+  type GasSnapshot,
+  type LiveSummary,
+  type ThroughputPoint,
+} from '../../lib/liveDashboard';
+import { averageGasGwei, fetchRpcGasSnapshots } from '../../lib/chainTelemetry';
 
 interface OverviewViewProps {
   apiKey: string;
@@ -14,11 +23,13 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
   const [revealed, setRevealed] = useState(false);
   const [summary, setSummary] = useState<LiveSummary>(emptySummary);
   const [throughput, setThroughput] = useState<ThroughputPoint[]>([]);
+  const [gasSnapshots, setGasSnapshots] = useState<GasSnapshot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const summaryRef = ref(rtdb, 'dashboard_live/summary');
     const throughputRef = ref(rtdb, 'dashboard_live/throughput_30d');
+    const gasRef = ref(rtdb, 'gas_live');
 
     const stopSummary = onValue(summaryRef, (snapshot) => {
       setSummary(mapSummaryRecord(snapshot.val()));
@@ -30,9 +41,37 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
       setIsLoading(false);
     });
 
+    const stopGas = onValue(gasRef, (snapshot) => {
+      const next = mapGasRecord(snapshot.val());
+      if (next.length > 0) {
+        setGasSnapshots(next);
+      }
+    });
+
+    let cancelled = false;
+
+    const syncRpcGas = async () => {
+      try {
+        const next = await fetchRpcGasSnapshots();
+        if (!cancelled && next.length > 0) {
+          setGasSnapshots((current) => (current.length > 0 ? current : next));
+        }
+      } catch (error) {
+        console.warn('UTG: Failed to fetch live gas via RPC.', error);
+      }
+    };
+
+    void syncRpcGas();
+    const timer = window.setInterval(() => {
+      void syncRpcGas();
+    }, 45000);
+
     return () => {
+      cancelled = true;
+      window.clearInterval(timer);
       stopSummary();
       stopThroughput();
+      stopGas();
     };
   }, []);
 
@@ -41,10 +80,14 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
     [throughput],
   );
 
+  const averageGas = useMemo(() => averageGasGwei(gasSnapshots), [gasSnapshots]);
+  const baseGas = gasSnapshots.find((snapshot) => snapshot.chain === 'base');
+  const ethereumGas = gasSnapshots.find((snapshot) => snapshot.chain === 'ethereum');
+
   const handleCopy = () => {
     navigator.clipboard.writeText(apiKey);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    window.setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -58,7 +101,13 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
             </div>
             <div>
               <p className="text-sm font-mono uppercase tracking-wider text-defi-muted">30-Day Volume</p>
-              {isLoading ? <div className="skeleton-bar mt-3 h-8 w-28" /> : <h3 className="text-2xl font-semibold text-white">${summary.thirtyDayVolumeUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}</h3>}
+              {isLoading ? (
+                <div className="skeleton-bar mt-3 h-8 w-28" />
+              ) : (
+                <h3 className="text-2xl font-semibold text-white">
+                  ${summary.thirtyDayVolumeUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                </h3>
+              )}
               <p className="mt-1 text-xs font-mono text-defi-emerald">
                 {summary.lastSyncedAt ? `Synced ${new Date(summary.lastSyncedAt).toLocaleTimeString()}` : 'Live from RTDB'}
               </p>
@@ -95,15 +144,21 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
         </div>
 
         <div className="metric-card relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,158,11,0.16),transparent_42%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.14),transparent_42%)]" />
           <div className="relative z-10 flex items-center space-x-4">
-            <div className="rounded-2xl bg-defi-amber/20 p-4 text-defi-amber">
+            <div className="rounded-2xl bg-[#1f2937] p-4 text-[#9fc5ff]">
               <Zap className="h-6 w-6" />
             </div>
             <div>
               <p className="text-sm font-mono uppercase tracking-wider text-defi-muted">Network Gas</p>
-              <h3 className="text-2xl font-semibold text-white">14 gwei</h3>
-              <p className="mt-1 text-xs font-mono text-defi-muted">Displayed locally while live gas feeds remain unchanged</p>
+              <h3 className="text-2xl font-semibold text-white">
+                {averageGas ? `${averageGas.toFixed(1)} gwei` : 'Live'}
+              </h3>
+              <p className="mt-1 text-xs font-mono text-defi-muted">
+                {baseGas && ethereumGas
+                  ? `Base ${baseGas.gwei.toFixed(1)} / Ethereum ${ethereumGas.gwei.toFixed(1)}`
+                  : 'Live RPC and RTDB-backed network telemetry'}
+              </p>
             </div>
           </div>
         </div>
@@ -168,7 +223,14 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
               {revealed ? 'Hide key' : 'Reveal key'}
             </button>
             <button onClick={handleCopy} className="button-primary w-full justify-center">
-              {copied ? <span className="text-emerald-950">Copied!</span> : <><Copy className="h-4 w-4" /><span>Copy Key</span></>}
+              {copied ? (
+                <span className="text-emerald-950">Copied!</span>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  <span>Copy Key</span>
+                </>
+              )}
             </button>
           </section>
 
@@ -179,16 +241,19 @@ export default function OverviewView({ apiKey }: OverviewViewProps) {
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-white">Quick Start</h2>
-                <p className="text-sm text-defi-muted">Initialization snippet</p>
+                <p className="text-sm text-defi-muted">Base-first initialization snippet</p>
               </div>
             </div>
             <div className="rounded-xl border border-[#30363d] bg-[#161b22] p-4 font-mono text-xs text-[#c9d1d9] shadow-inner">
               <pre>
                 <code>
-<span className="text-[#ff7b72]">import</span> {'{'} UTGClient {'}'} <span className="text-[#ff7b72]">from</span> <span className="text-[#a5d6ff]">'@aima/protocol-sdk'</span>;{'\n\n'}
+<span className="text-[#ff7b72]">import</span> {'{'} UTGClient {'}'} <span className="text-[#ff7b72]">from</span> <span className="text-[#a5d6ff]">'@aima/protocol-sdk'</span>;{'\n'}
+<span className="text-[#ff7b72]">import</span> {'{'} pay {'}'} <span className="text-[#ff7b72]">from</span> <span className="text-[#a5d6ff]">'@base-org/account'</span>;{'\n\n'}
 <span className="text-[#ff7b72]">const</span> client = <span className="text-[#ff7b72]">new</span> UTGClient({'{'}{'\n'}
 {'  '}apiKey: process.env.API_KEY,{'\n'}
+{'  '}defaultNetwork: <span className="text-[#a5d6ff]">'base'</span>,{'\n'}
 {'}'});{'\n\n'}
+<span className="text-[#ff7b72]">await</span> pay({'{'} amount: <span className="text-[#a5d6ff]">'10.00'</span>, to: process.env.BASE_TREASURY {'}'});{'\n'}
 <span className="text-[#ff7b72]">await</span> client.execute(intent);
                 </code>
               </pre>
