@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { applyActionCode, onAuthStateChanged, reload, signOut, type User } from 'firebase/auth';
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { WagmiProvider, http } from 'wagmi';
-import { mainnet, sepolia, base } from 'wagmi/chains';
+import { WagmiProvider, createConfig, http } from 'wagmi';
+import { base, mainnet, sepolia } from 'wagmi/chains';
+import { baseAccount, injected, walletConnect } from 'wagmi/connectors';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { RainbowKitProvider, getDefaultConfig } from '@rainbow-me/rainbowkit';
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit';
 import '@rainbow-me/rainbowkit/styles.css';
 
 import Navbar from './components/Navbar';
@@ -19,20 +20,28 @@ import Onboarding from './components/Onboarding';
 import ProtocolShowcase from './components/landing/ProtocolShowcase';
 import DocsExperience from './components/docs/DocsExperience';
 import { auth } from './lib/firebase';
+import { isLikelyBaseApp, truncateAddress } from './lib/baseAuth';
 import { syncUserProgress, type UserProgress } from './lib/userProgress';
 
 const PENDING_EMAIL_STORAGE_KEY = 'utg-pending-email';
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID || '11111111111111111111111111111111';
 
-const config = getDefaultConfig({
-  appName: 'Aima UTG',
-  projectId,
-  chains: [mainnet, sepolia, base],
+const config = createConfig({
+  chains: [base, mainnet, sepolia],
+  connectors: [
+    baseAccount({
+      appName: 'Aima UTG',
+    }),
+    injected(),
+    walletConnect({
+      projectId,
+    }),
+  ],
   transports: {
+    [base.id]: http(),
     [mainnet.id]: http(),
     [sepolia.id]: http(),
-    [base.id]: http(),
   },
 });
 
@@ -71,7 +80,7 @@ function LoadingScreen() {
         <p className="light-eyebrow mb-5">Secure session</p>
         <h1 className="text-3xl font-semibold text-slate-900">Checking your gateway state</h1>
         <p className="mt-3 text-sm leading-6 text-slate-500">
-          We are syncing Firebase authentication, verification status, and onboarding progress.
+          We are syncing authentication, wallet identity, and onboarding progress.
         </p>
       </div>
     </div>
@@ -88,6 +97,7 @@ function AppRoutes({
   onStart,
   onProgressChange,
   onOnboardingComplete,
+  baseMode,
 }: {
   authUser: User | null;
   userProgress: UserProgress | null;
@@ -98,14 +108,24 @@ function AppRoutes({
   onStart: () => void;
   onProgressChange: () => Promise<void> | void;
   onOnboardingComplete: () => Promise<void> | void;
+  baseMode: boolean;
 }) {
-  const currentEmail = useMemo(
-    () => authUser?.email || userProgress?.email || localStorage.getItem(PENDING_EMAIL_STORAGE_KEY) || '',
-    [authUser?.email, userProgress?.email],
-  );
+  const identityLabel =
+    userProgress?.primaryWallet
+      ? truncateAddress(userProgress.primaryWallet)
+      : authUser?.email ||
+        userProgress?.email ||
+        localStorage.getItem(PENDING_EMAIL_STORAGE_KEY) ||
+        'Operator session';
 
-  const needsEmailVerification = !!authUser && !authUser.emailVerified;
-  const needsOnboarding = !!authUser?.emailVerified && !userProgress?.onboardingCompletedAt;
+  const isBaseSession = userProgress?.authMode === 'base';
+  const needsEmailVerification =
+    !!authUser &&
+    !authUser.isAnonymous &&
+    !isBaseSession &&
+    !!(authUser.email || userProgress?.email) &&
+    !authUser.emailVerified;
+  const needsOnboarding = !!authUser && !userProgress?.onboardingCompletedAt;
 
   return (
     <Routes>
@@ -123,6 +143,7 @@ function AppRoutes({
                 emailActionError={emailActionError}
                 onBackToLanding={onBackToLanding}
                 onProgressChange={onProgressChange}
+                baseMode={baseMode}
               />
             ) : (
               <Navigate to="/app" replace />
@@ -136,6 +157,7 @@ function AppRoutes({
               emailActionError={emailActionError}
               onBackToLanding={onBackToLanding}
               onProgressChange={onProgressChange}
+              baseMode={baseMode}
             />
           )
         }
@@ -153,11 +175,21 @@ function AppRoutes({
                 emailActionError={emailActionError}
                 onBackToLanding={onBackToLanding}
                 onProgressChange={onProgressChange}
+                baseMode={baseMode}
               />
             ) : needsOnboarding ? (
-              <Onboarding userEmail={currentEmail} onComplete={onOnboardingComplete} />
+              <Onboarding
+                userLabel={identityLabel}
+                baseMode={baseMode || isBaseSession}
+                userProgress={userProgress}
+                onComplete={onOnboardingComplete}
+              />
             ) : (
-              <Dashboard onLogout={onLogout} userEmail={currentEmail} />
+              <Dashboard
+                onLogout={onLogout}
+                userLabel={identityLabel}
+                userProgress={userProgress}
+              />
             )
           ) : (
             <Navigate to="/welcome" replace />
@@ -179,6 +211,7 @@ function AppShell() {
   const [isBootstrapping, setIsBootstrapping] = useState(true);
   const [emailActionNotice, setEmailActionNotice] = useState<string | null>(null);
   const [emailActionError, setEmailActionError] = useState<string | null>(null);
+  const baseMode = isLikelyBaseApp();
 
   const refreshUserProgress = useCallback(async (user: User | null) => {
     if (!user) {
@@ -302,6 +335,7 @@ function AppShell() {
         onStart={handleStart}
         onProgressChange={() => refreshUserProgress(auth.currentUser)}
         onOnboardingComplete={handleOnboardingComplete}
+        baseMode={baseMode}
       />
     </>
   );

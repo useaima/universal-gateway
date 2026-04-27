@@ -1,0 +1,3 @@
+[workspace]
+members = ["crates/chain-observer"]
+resolver = "2"

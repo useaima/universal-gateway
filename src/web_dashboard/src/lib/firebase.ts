@@ -2,6 +2,8 @@ import { initializeApp, type FirebaseApp } from 'firebase/app';
 import {
   getAuth,
   GoogleAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
   type ActionCodeSettings,
   type Auth,
 } from 'firebase/auth';
@@ -41,6 +43,8 @@ export const auth: Auth = getAuth(app);
 export const db: Firestore = getFirestore(app);
 export const rtdb: Database = getDatabase(app);
 export const googleProvider = new GoogleAuthProvider();
+
+void setPersistence(auth, browserLocalPersistence);
 
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 

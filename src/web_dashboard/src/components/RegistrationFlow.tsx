@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import {
   ArrowLeft,
-  ArrowRight,
   CheckCircle2,
   Lock,
   Mail,
+  Shield,
   Sparkles,
 } from 'lucide-react';
 import {
@@ -17,7 +17,19 @@ import {
   signOut,
   type User,
 } from 'firebase/auth';
-import { auth, getEmailActionSettings, googleProvider, verifyEnterpriseRecaptcha } from '../lib/firebase';
+import { useConnect, useDisconnect } from 'wagmi';
+import {
+  auth,
+  getEmailActionSettings,
+  googleProvider,
+  verifyEnterpriseRecaptcha,
+} from '../lib/firebase';
+import {
+  ensureBaseFirebaseSession,
+  isLikelyBaseApp,
+  requestBaseNonce,
+  verifyBaseSignature,
+} from '../lib/baseAuth';
 import { mergeUserProgress, type UserProgress } from '../lib/userProgress';
 import welcomeVisual from '../assets/welcome-visual.svg';
 
@@ -31,6 +43,7 @@ interface RegistrationFlowProps {
   emailActionError: string | null;
   onBackToLanding: () => void;
   onProgressChange: () => Promise<void> | void;
+  baseMode: boolean;
 }
 
 const PENDING_EMAIL_STORAGE_KEY = 'utg-pending-email';
@@ -50,6 +63,10 @@ function GoogleMark() {
   );
 }
 
+function BaseMark() {
+  return <span className="inline-block h-5 w-5 rounded-[4px] bg-[#0000FF]" aria-hidden="true" />;
+}
+
 export default function RegistrationFlow({
   view,
   user,
@@ -58,6 +75,7 @@ export default function RegistrationFlow({
   emailActionError,
   onBackToLanding,
   onProgressChange,
+  baseMode,
 }: RegistrationFlowProps) {
   const [email, setEmail] = useState(user?.email || localStorage.getItem(PENDING_EMAIL_STORAGE_KEY) || '');
   const [password, setPassword] = useState('');
@@ -65,6 +83,9 @@ export default function RegistrationFlow({
   const [info, setInfo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isBaseLoading, setIsBaseLoading] = useState(false);
+  const { connectAsync, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
 
   const currentEmail = useMemo(
     () => user?.email || userProgress?.email || localStorage.getItem(PENDING_EMAIL_STORAGE_KEY) || email,
@@ -100,7 +121,8 @@ export default function RegistrationFlow({
       localStorage.setItem(PENDING_EMAIL_STORAGE_KEY, email.trim());
 
       await mergeUserProgress(credential.user.uid, {
-        authProvider: isPasswordAccount ? 'password' : 'password',
+        authMode: 'firebase',
+        authProvider: 'password',
         email: credential.user.email || email.trim(),
         lastLoginAt: new Date().toISOString(),
       });
@@ -132,6 +154,7 @@ export default function RegistrationFlow({
       localStorage.setItem(PENDING_EMAIL_STORAGE_KEY, credential.user.email || '');
 
       const googlePayload: Record<string, string> = {
+        authMode: 'firebase',
         authProvider: 'google',
         email: credential.user.email || '',
         lastLoginAt: new Date().toISOString(),
@@ -148,6 +171,92 @@ export default function RegistrationFlow({
       setError(getErrorMessage(googleError));
     } finally {
       setIsGoogleLoading(false);
+    }
+  };
+
+  const handleBaseSignIn = async () => {
+    setError(null);
+    setInfo(null);
+    setIsBaseLoading(true);
+
+    try {
+      await verifyEnterpriseRecaptcha('auth_base_submit');
+
+      const baseConnector = connectors.find((connector) => connector.id === 'baseAccount');
+
+      if (!baseConnector) {
+        throw new Error('Base Account connector not found in the current wallet configuration.');
+      }
+
+      const nonce = await requestBaseNonce();
+
+      await connectAsync({ connector: baseConnector });
+
+      const provider =
+        (await (baseConnector as { getProvider?: () => Promise<unknown> }).getProvider?.()) ||
+        (baseConnector as { provider?: { request?: (payload: unknown) => Promise<unknown> } }).provider;
+
+      const authResult = (await (provider as { request: (payload: unknown) => Promise<unknown> }).request({
+        method: 'wallet_connect',
+        params: [
+          {
+            version: '1',
+            capabilities: {
+              signInWithEthereum: {
+                nonce,
+                chainId: '0x2105',
+              },
+            },
+          },
+        ],
+      })) as {
+        accounts?: Array<{
+          address: string;
+          capabilities?: {
+            signInWithEthereum?: {
+              message: string;
+              signature: string;
+            };
+          };
+        }>;
+      };
+
+      const account = authResult.accounts?.[0];
+      const message = account?.capabilities?.signInWithEthereum?.message;
+      const signature = account?.capabilities?.signInWithEthereum?.signature;
+
+      if (!account?.address || !message || !signature) {
+        throw new Error('Base authentication did not return the required wallet signature payload.');
+      }
+
+      const verifiedSession = await verifyBaseSignature({
+        address: account.address,
+        message,
+        signature,
+      });
+
+      const firebaseUser = await ensureBaseFirebaseSession(verifiedSession);
+
+      await mergeUserProgress(firebaseUser.uid, {
+        authMode: 'base',
+        authProvider: 'base',
+        primaryWallet: verifiedSession.address,
+        walletAddress: verifiedSession.address,
+        evmAddresses: [verifiedSession.address],
+        baseAppInstalledAt: verifiedSession.baseAppInstalledAt || new Date().toISOString(),
+      });
+
+      setInfo('Base wallet verified. We resumed your operator session using the linked wallet identity.');
+      await syncAppState();
+    } catch (baseError) {
+      try {
+        await disconnect();
+      } catch {
+        // ignore cleanup error
+      }
+      setError(getErrorMessage(baseError));
+    } finally {
+      setIsBaseLoading(false);
     }
   };
 
@@ -183,9 +292,10 @@ export default function RegistrationFlow({
 
   const description =
     view === 'welcome'
-      ? 'Sign in with Email, Password, or Google. We automatically resume the right step for existing and new users.'
+      ? 'Use Sign in with Base inside the Base App, or continue with Google or email/password in the standard web flow.'
       : 'We sent a Firebase verification link. Open it from the same browser window and we will resume the flow automatically.';
   const infoBanner = info || emailActionNotice;
+  const baseRecommended = baseMode || isLikelyBaseApp();
 
   return (
     <div className="auth-shell min-h-screen px-4 py-4 font-sans md:px-8">
@@ -213,7 +323,7 @@ export default function RegistrationFlow({
           <section className="light-panel px-6 py-8 md:px-8 md:py-10">
             <div className="light-eyebrow mb-5">
               <Sparkles className="h-4 w-4" />
-              Secure identity flow
+              Hybrid operator identity
             </div>
             <h1 className="text-3xl font-semibold leading-tight text-slate-900 md:text-4xl">{heading}</h1>
             <p className="mt-4 max-w-xl text-sm leading-7 text-slate-500">{description}</p>
@@ -232,10 +342,26 @@ export default function RegistrationFlow({
 
             {view === 'welcome' && (
               <div className="mt-8 space-y-6">
+                <div className="rounded-2xl border border-[#d7e0ff] bg-[#f5f7ff] px-4 py-3 text-sm text-[#1f3bb3]">
+                  {baseRecommended
+                    ? 'Base App detected. Wallet-native sign-in is the recommended path for this session.'
+                    : 'Base-native sign-in is available here too. Use it when you want a wallet-led operator session.'}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleBaseSignIn}
+                  disabled={isBaseLoading || isGoogleLoading || isLoading}
+                  className="flex w-full items-center justify-center gap-3 rounded-2xl border border-[#d6dcff] bg-white px-5 py-4 text-sm font-medium text-slate-800 shadow-[0_16px_34px_rgba(28,46,150,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(28,46,150,0.12)] disabled:opacity-70"
+                >
+                  <BaseMark />
+                  <span>{isBaseLoading ? 'Verifying Base wallet...' : 'Sign in with Base'}</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handleGoogleSignIn}
-                  disabled={isGoogleLoading || isLoading}
+                  disabled={isGoogleLoading || isLoading || isBaseLoading}
                   className="light-button-secondary w-full justify-center py-4 text-sm font-medium text-slate-700 disabled:opacity-70"
                 >
                   <GoogleMark />
@@ -244,7 +370,7 @@ export default function RegistrationFlow({
 
                 <div className="flex items-center gap-4 text-xs font-mono uppercase tracking-[0.24em] text-slate-400">
                   <span className="h-px flex-1 bg-[#eadfcf]" />
-                  <span>Email and password</span>
+                  <span>Standard web auth</span>
                   <span className="h-px flex-1 bg-[#eadfcf]" />
                 </div>
 
@@ -271,6 +397,7 @@ export default function RegistrationFlow({
                       <input
                         type="password"
                         required
+                        minLength={6}
                         value={password}
                         onChange={(event) => setPassword(event.target.value)}
                         placeholder="Minimum 6 characters"
@@ -279,9 +406,8 @@ export default function RegistrationFlow({
                     </div>
                   </label>
 
-                  <button disabled={isLoading || isGoogleLoading} type="submit" className="light-button-primary w-full justify-center py-4 disabled:opacity-70">
-                    <span>{isLoading ? 'Securing session...' : 'Get Started'}</span>
-                    {!isLoading && <ArrowRight className="h-5 w-5" />}
+                  <button type="submit" disabled={isLoading || isGoogleLoading || isBaseLoading} className="light-button-primary w-full justify-center py-4 disabled:opacity-70">
+                    <span>{isLoading ? 'Processing...' : 'Continue with Email'}</span>
                   </button>
                 </form>
               </div>
@@ -289,66 +415,92 @@ export default function RegistrationFlow({
 
             {view === 'email_verification' && (
               <div className="mt-8 space-y-6">
-                <div className="rounded-3xl border border-[#eadfcf] bg-white/88 p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-3 text-emerald-700">
-                      <CheckCircle2 className="h-6 w-6" />
-                    </div>
+                <div className="rounded-2xl border border-[#eadfcf] bg-[#fff9ee] px-5 py-4">
+                  <p className="text-xs font-mono uppercase tracking-[0.2em] text-[#9a8357]">Verification target</p>
+                  <p className="mt-3 text-lg font-semibold text-slate-900">{currentEmail || 'Pending email address'}</p>
+                  <p className="mt-2 text-sm leading-7 text-slate-500">
+                    Firebase action links return to this same deployment and continue the onboarding or dashboard route automatically.
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#e5f2e7] bg-[#f5fcf6] px-5 py-4">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 text-emerald-600" />
                     <div>
-                      <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Verification address</p>
-                      <p className="mt-2 text-lg font-semibold text-slate-900">{currentEmail}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
-                        Once the verification link is opened, this window will route you to onboarding or the dashboard automatically.
+                      <p className="text-sm font-medium text-slate-900">Session routing</p>
+                      <p className="mt-1 text-sm leading-7 text-slate-500">
+                        After verification, the app routes you to onboarding if it is incomplete, otherwise straight to the live dashboard.
                       </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <button type="button" onClick={handleResendVerification} disabled={isLoading} className="light-button-primary justify-center py-4 disabled:opacity-70">
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={isLoading}
+                    className="light-button-primary flex-1 justify-center py-4 disabled:opacity-70"
+                  >
+                    <Mail className="h-4 w-4" />
                     <span>{isLoading ? 'Sending...' : 'Send Verification Link'}</span>
                   </button>
-                  <button type="button" onClick={handleUseAnotherAccount} className="light-button-secondary justify-center py-4">
-                    Use Another Account
+
+                  <button
+                    type="button"
+                    onClick={handleUseAnotherAccount}
+                    className="light-button-secondary flex-1 justify-center py-4 text-sm font-mono"
+                  >
+                    Use another account
                   </button>
                 </div>
               </div>
             )}
           </section>
 
-          <aside className="light-panel relative overflow-hidden p-4 md:p-5">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(207,169,93,0.18),transparent_32%),radial-gradient(circle_at_85%_16%,rgba(245,158,11,0.12),transparent_24%)]" />
-            <div className="relative flex h-full flex-col justify-between rounded-[24px] border border-[#eadfcf] bg-[#fffaf1] p-6">
-              <div>
-                <p className="text-xs font-mono uppercase tracking-[0.24em] text-[#9a8357]">Identity and approvals</p>
-                <h2 className="mt-4 text-3xl font-semibold leading-tight text-slate-900">
-                  Secure every agent action before it reaches settlement.
-                </h2>
-                <p className="mt-4 max-w-lg text-sm leading-7 text-slate-500">
-                  This welcome surface is intentionally quieter and more editorial, with the same premium trust cues as a modern protocol docs experience.
-                </p>
-              </div>
-
-              <div className="mt-8 rounded-[28px] border border-[#eadfcf] bg-white/88 p-4 shadow-[0_24px_54px_rgba(108,83,39,0.08)]">
-                <img
-                  src={welcomeVisual}
-                  alt="Aima UTG welcome illustration"
-                  className="aspect-[4/3] w-full rounded-[22px] border border-[#efe2cc] object-cover"
-                />
-              </div>
-
-              <div className="mt-8 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
-                <div className="rounded-2xl border border-[#eadfcf] bg-white/84 p-4">
-                  <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Email verification</p>
-                  <p className="mt-2 leading-6">Firebase verification links resume the same browser flow automatically.</p>
+          <section className="light-panel overflow-hidden p-4 md:p-5">
+            <div className="relative h-full overflow-hidden rounded-[30px] border border-[#eadfcf] bg-[linear-gradient(180deg,#fff9ef,#fff5e2)]">
+              <div className="grid h-full gap-0 lg:grid-cols-[0.64fr_0.36fr]">
+                <div className="min-h-[420px] overflow-hidden border-b border-[#eadfcf] lg:min-h-full lg:border-b-0 lg:border-r">
+                  <img
+                    src={welcomeVisual}
+                    alt="Aima Protocol network editorial illustration"
+                    className="h-full w-full object-cover"
+                  />
                 </div>
-                <div className="rounded-2xl border border-[#eadfcf] bg-white/84 p-4">
-                  <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Session routing</p>
-                  <p className="mt-2 leading-6">Returning users continue directly into onboarding or the live dashboard without extra identity loops.</p>
+
+                <div className="flex flex-col justify-between p-6">
+                  <div>
+                    <div className="light-eyebrow mb-4">
+                      <Shield className="h-4 w-4 text-[#b3842f]" />
+                      Base-ready operator surface
+                    </div>
+                    <h2 className="text-2xl font-semibold leading-tight text-slate-900">
+                      Wallet-native for the Base App, Firebase-backed for the open web.
+                    </h2>
+                    <p className="mt-4 text-sm leading-7 text-slate-600">
+                      The Base path stays inside the app experience with SIWE and wallet identity. The standard web path keeps Google and email/password for broader operator access.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3">
+                    {[
+                      'Sign in with Base uses SIWE verification on Base mainnet.',
+                      'Base sessions land in the same Firestore and RTDB-backed app state.',
+                      'Base-denominated payments and dashboard telemetry stay aligned with the gateway.',
+                    ].map((entry, index) => (
+                      <div key={entry} className="rounded-2xl border border-[#eadfcf] bg-white/90 px-4 py-3">
+                        <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
+                          <span>{entry}</span>
+                          <span className="font-mono text-[#b3842f]">0{index + 1}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </aside>
+          </section>
         </div>
       </main>
     </div>
