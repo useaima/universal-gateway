@@ -2,7 +2,6 @@ import { initializeApp, type FirebaseApp } from 'firebase/app';
 import {
   getAuth,
   GoogleAuthProvider,
-  RecaptchaVerifier,
   type ActionCodeSettings,
   type Auth,
 } from 'firebase/auth';
@@ -19,7 +18,6 @@ type EnterpriseGrecaptcha = {
 declare global {
   interface Window {
     grecaptcha?: EnterpriseGrecaptcha;
-    utgPhoneRecaptcha?: RecaptchaVerifier;
   }
 }
 
@@ -91,18 +89,4 @@ export const verifyEnterpriseRecaptcha = async (action: string) => {
   if (!response.ok || !data.success) {
     throw new Error(data.error || 'reCAPTCHA verification failed.');
   }
-};
-
-export const setupRecaptcha = (containerId: string) => {
-  if (window.utgPhoneRecaptcha) {
-    window.utgPhoneRecaptcha.clear();
-    window.utgPhoneRecaptcha = undefined;
-  }
-
-  const verifier = new RecaptchaVerifier(auth, containerId, {
-    size: 'invisible',
-  });
-
-  window.utgPhoneRecaptcha = verifier;
-  return verifier;
 };
