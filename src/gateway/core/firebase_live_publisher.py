@@ -323,16 +323,20 @@ class FirebaseLivePublisher:
 
     def _infer_network(self, target: str, details: str) -> str:
         source = f"{target} {details}".lower()
-        if "arbitrum" in source:
-            return "Arbitrum"
+        if "bitcoin" in source or "btc" in source:
+            return "Bitcoin"
+        if "solana" in source or "sol" in source:
+            return "Solana"
         if "base" in source:
             return "Base"
+        if "ethereum" in source or " eth" in source:
+            return "Ethereum"
+        if "arbitrum" in source:
+            return "Arbitrum"
         if "polygon" in source:
             return "Polygon"
         if "optimism" in source:
             return "Optimism"
-        if "ethereum" in source or "eth" in source:
-            return "Ethereum"
         return "Gateway"
 
     def _reason_from_status(self, status: str, required_signatures: List[str]) -> str:

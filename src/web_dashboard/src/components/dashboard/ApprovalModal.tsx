@@ -108,17 +108,18 @@ export default function ApprovalModal({ transaction, onClose }: ApprovalModalPro
             </div>
 
             <div className="mt-8 grid gap-3">
-              <button type="button" className="button-primary w-full">
-                Approve & Sign
+              <button type="button" disabled className="button-primary w-full cursor-not-allowed opacity-70">
+                Approve in Signer Flow
               </button>
               <button
                 type="button"
-                className="inline-flex w-full items-center justify-center rounded-xl border border-defi-crimson/35 bg-defi-crimson/10 px-5 py-3 font-medium text-defi-crimson transition hover:-translate-y-0.5 hover:bg-defi-crimson/15"
+                disabled
+                className="inline-flex w-full cursor-not-allowed items-center justify-center rounded-xl border border-defi-crimson/35 bg-defi-crimson/10 px-5 py-3 font-medium text-defi-crimson opacity-70"
               >
-                Reject & Halt
+                Halt in Policy Console
               </button>
               <p className="text-center text-xs font-mono text-defi-muted">
-                Demo UI only. No wallet or backend action is triggered here.
+                This review surface reflects live gateway state. Final signature actions continue through the operator signer flow configured for this deployment.
               </p>
             </div>
           </div>

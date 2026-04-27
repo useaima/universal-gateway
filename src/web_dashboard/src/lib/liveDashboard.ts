@@ -15,6 +15,13 @@ export interface ThroughputPoint {
   count: number;
 }
 
+export interface GasSnapshot {
+  chain: 'base' | 'ethereum';
+  gwei: number;
+  updatedAt?: string;
+  source?: 'rtdb' | 'rpc';
+}
+
 export interface LiveTransactionRecord {
   id: string;
   agent: string;
@@ -196,4 +203,27 @@ export const mapThroughputRecord = (record: Record<string, unknown> | null | und
         day: '2-digit',
       }),
     }));
+};
+
+export const mapGasRecord = (record: Record<string, unknown> | null | undefined): GasSnapshot[] => {
+  if (!record) {
+    return [];
+  }
+
+  return Object.entries(record)
+    .map(([chain, value]) => {
+      const entry = (value || {}) as Record<string, unknown>;
+
+      if (chain !== 'base' && chain !== 'ethereum') {
+        return null;
+      }
+
+      return {
+        chain,
+        gwei: normalizeNumber(entry.gwei),
+        updatedAt: normalizeString(entry.updatedAt) || undefined,
+        source: normalizeString(entry.source, 'rtdb') as 'rtdb' | 'rpc',
+      };
+    })
+    .filter((entry): entry is GasSnapshot => entry !== null && entry.gwei > 0);
 };

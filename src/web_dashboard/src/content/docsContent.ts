@@ -46,21 +46,21 @@ export const docsPages: DocsPage[] = [
     label: 'Overview',
     group: 'Getting Started',
     eyebrow: 'UTG 2026.4',
-    title: 'A non-custodial control layer for agentic finance',
+    title: 'A Base-first control layer for agentic finance',
     summary:
-      'UTG lets AI systems propose financial actions without ever receiving raw wallet custody, then routes approvals, policy checks, and audit evidence through a single operational surface.',
+      'UTG lets AI systems propose financial actions without ever receiving raw wallet custody, then routes Base-native auth, approvals, policy checks, and audit evidence through a single operational surface.',
     hero:
-      'Aima Universal Transaction Gateway is the settlement control plane between autonomous software and real-value execution.',
+      'Aima Universal Transaction Gateway is the Base-first settlement control plane between autonomous software and real-value execution.',
     sections: [
       {
         id: 'what-utg-solves',
         title: 'What UTG solves',
         body: [
           'AI agents are increasingly capable of taking action, but direct access to wallets, payment APIs, and internal finance systems creates unacceptable custody risk.',
-          'UTG inserts a programmable enforcement layer between agent reasoning and settlement so automation stays useful while human trust boundaries stay intact.',
+          'UTG inserts a programmable enforcement layer between agent reasoning and settlement so automation stays useful while human trust boundaries stay intact, even as the product shifts toward Base-native auth and payments.',
         ],
         bullets: [
-          'Non-custodial execution posture',
+          'Base-first, non-custodial execution posture',
           'Human-in-the-loop interrupts for high-risk actions',
           'Consistent logging, replay protection, and policy visibility',
         ],
@@ -133,18 +133,18 @@ export const docsPages: DocsPage[] = [
     label: 'Auth & Onboarding',
     group: 'Getting Started',
     eyebrow: 'Identity Flow',
-    title: 'Email verification, account resume, and guided setup',
+        title: 'Base-native auth, web fallback, and guided setup',
     summary:
-      'The frontend now resumes users based on Firebase Auth state plus Firestore progress flags so returning operators continue exactly where they stopped.',
+      'The frontend now supports wallet-first Base sessions alongside Firebase fallback, then resumes operators from Firestore progress flags so they continue exactly where they stopped.',
     hero:
-      'Identity is progressive: email proves account ownership, resume logic picks the next incomplete step, and onboarding captures operational context for the gateway.',
+      'Identity is mode-aware: Base sessions stay wallet-led, web sessions can still use Firebase, and onboarding captures the operator context the gateway needs.',
     sections: [
       {
         id: 'welcome-entry',
         title: 'Welcome entry',
         body: [
-          'Users start from a split welcome surface with Google or email/password sign-in. Existing users resume their flow. New users create an account in the same screen.',
-          'The landing page remains public, while the welcome route handles credential entry and verification guidance in the same browser window.',
+          'Users start from a split welcome surface with Sign in with Base, Google, or email/password. Inside the Base App, the wallet-native path is the preferred experience.',
+          'The landing page remains public, while the welcome route handles wallet auth, fallback credentials, and verification guidance in the same browser window.',
         ],
         visual: 'auth-flow',
       },
@@ -152,23 +152,23 @@ export const docsPages: DocsPage[] = [
         id: 'verification-layers',
         title: 'Verification layers',
         body: [
-          'Email verification uses Firebase action links that route back into the app. On Firebase Spark, the flow resumes directly into onboarding after email verification instead of requiring phone auth.',
-          'Progress is recorded in Firestore so users do not repeat completed steps.',
+          'Base-native sessions rely on SIWE-style wallet verification and then mint or resume the same backend account state through Firebase-backed progress records.',
+          'Outside the Base App, Firebase email verification still routes back into the app. Progress is recorded in Firestore so users do not repeat completed steps.',
         ],
         bullets: [
-          'Email verified before protected app access',
-          'Returning users resume from their first incomplete step',
-          'Onboarding completed before dashboard entry',
+          'No email or phone verification in the preferred Base App flow',
+          'Returning operators resume from their first incomplete step',
+          'Onboarding completes before dashboard entry regardless of auth mode',
         ],
         code: {
           label: 'Client environment',
           language: 'bash',
-          content: `VITE_FIREBASE_API_KEY=...\nVITE_FIREBASE_AUTH_DOMAIN=...\nVITE_FIREBASE_PROJECT_ID=...\nVITE_FIREBASE_DATABASE_URL=...\nVITE_RECAPTCHA_SITE_KEY=...`,
+          content: `VITE_FIREBASE_API_KEY=...\nVITE_FIREBASE_AUTH_DOMAIN=...\nVITE_FIREBASE_PROJECT_ID=...\nVITE_FIREBASE_DATABASE_URL=...\nVITE_RECAPTCHA_SITE_KEY=...\nVITE_WALLETCONNECT_PROJECT_ID=...\nVITE_BASE_PAY_RECEIVER=0x...\nVITE_BASE_BOOTSTRAP_USDC=10.00`,
         },
         callout: {
           tone: 'warning',
           title: 'Return path',
-          body: 'Email verification links should return to the same deployment origin so users resume the flow without losing state.',
+          body: 'Base sessions should stay inside the app experience. Web fallback verification links should still return to the same deployment origin so users resume the flow without losing state.',
         },
       },
     ],
@@ -220,9 +220,9 @@ export const docsPages: DocsPage[] = [
     eyebrow: 'Live Data',
     title: 'From SQLite lifecycle logs to live dashboard metrics',
     summary:
-      'The gateway republishes approval and execution lifecycle data into Firebase Realtime Database so the operations dashboard updates without reloads.',
+      'The gateway republishes approval and execution lifecycle data into Firebase Realtime Database so the operations dashboard, gas cards, and portfolio views update without reloads.',
     hero:
-      'The public-facing dashboard is no longer mock-only. It is fed from the same lifecycle artifacts the protocol already writes during execution.',
+      'The dashboard is fed from the same lifecycle artifacts the protocol already writes during execution, plus live chain reads and observer-backed portfolio records.',
     sections: [
       {
         id: 'publisher-path',
@@ -236,6 +236,8 @@ export const docsPages: DocsPage[] = [
           'dashboard_live/summary',
           'dashboard_live/throughput_30d',
           'dashboard_live/transactions/{transactionId}',
+          'portfolio_live/summary and portfolio_live/assets/{assetId}',
+          'gas_live/{chain}',
         ],
       },
       {
@@ -243,12 +245,12 @@ export const docsPages: DocsPage[] = [
         title: 'Operator surface',
         body: [
           'Overview shows protocol volume, active agents, pending approvals, and throughput. Transactions shows live rows with status badges, reasoning previews, and expandable payload details.',
-          'Portfolio remains display-only in this phase because the repo does not currently expose a holdings ledger or balance indexer.',
+          'Portfolio resolves Base and Ethereum balances directly from live RPC reads, then layers in observer-backed Bitcoin and Solana balances whenever the chain observer has published them.',
         ],
         callout: {
           tone: 'success',
           title: 'What changed',
-          body: 'The dashboard now behaves like an operations surface instead of a static mockup, while still preserving the existing backend logic and transaction flow.',
+          body: 'The dashboard now behaves like a Base-native operations surface with live auth, payments, gas, and execution telemetry while preserving the existing gateway control logic.',
         },
       },
     ],
@@ -269,7 +271,7 @@ export const docsPages: DocsPage[] = [
         title: 'Connection model',
         body: [
           'The gateway is designed to appear as a server in an MCP-style agent configuration. The agent asks for actions, receives halts or approvals, and retries through a consistent interface.',
-          'The `skill.md` reference remains available as a raw artifact for agent-side discovery and instruction loading.',
+          'The `skill.md` reference remains available as a raw artifact for agent-side discovery and instruction loading, while Base Pay and x402 can cover different payment surfaces.',
         ],
         code: {
           label: 'Example MCP server entry',
@@ -322,12 +324,13 @@ export const docsPages: DocsPage[] = [
         title: 'Compliance posture',
         body: [
           'The protocol aims for strong local auditability and non-repudiation rather than central custody. This supports internal governance, incident review, and regulated operating expectations.',
-          'Logs, signatures, and transaction metadata remain part of an explainable trail rather than vanishing into application black boxes.',
+          'Onchain metadata such as transaction details, contract addresses, event receipts, and wallet signatures are paired with offchain metadata like docs links, payload context, and operator notes so the trail stays explainable.',
         ],
         bullets: [
           'Human-verifiable approval trail',
           'Local audit storage as system record',
           'Clear boundaries between agent request and value movement',
+          'Onchain and offchain metadata preserved together',
         ],
         callout: {
           tone: 'critical',

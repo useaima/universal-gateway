@@ -9,25 +9,25 @@ interface HeroProps {
 
 const slides = [
   {
-    label: 'Autonomous gateway',
-    title: 'Programmable settlement for AI systems without surrendering custody.',
+    label: 'Base-native gateway',
+    title: 'Publish the operator surface on Base without surrendering wallet custody.',
     detail:
-      'Agents can propose, route, and retry financial actions while the gateway keeps wallet authority and approval boundaries where they belong.',
-    metrics: ['Web2 AI -> Web3 execution', 'Non-custodial control plane', 'Operator-visible reasoning'],
+      'UTG keeps AI execution programmable while moving user growth, wallet auth, and settlement toward Base-first flows that stay legible to operators.',
+    metrics: ['Base App compatible', 'Non-custodial control plane', 'Wallet-led operator sessions'],
   },
   {
-    label: 'Approval surface',
-    title: 'Interrupt only the actions that deserve a human signature.',
+    label: 'Payment and policy',
+    title: 'Collect user payments on Base while agent services settle through x402.',
     detail:
-      'The system stops risky requests, explains the policy trigger, and presents the decision in a composed review step instead of a generic alert.',
-    metrics: ['Threshold-driven review', 'Readable policy context', 'Signed continuation trail'],
+      'Base Pay covers user-facing USDC flows, while the gateway still preserves threshold-driven approvals, policy reasoning, and auditable execution receipts.',
+    metrics: ['Base Pay for USDC', 'x402 for agent APIs', 'Receipt-ready execution trail'],
   },
   {
-    label: 'Realtime operations',
-    title: 'Feed live protocol state back into the same command center operators use.',
+    label: 'Multi-chain visibility',
+    title: 'See executable Base and Ethereum rails beside Bitcoin and Solana observer data.',
     detail:
-      'Pending approvals, throughput, and transaction timelines stream from the lifecycle publisher into the dashboard without changing your backend logic.',
-    metrics: ['RTDB-backed metrics', 'Expandable transaction detail', 'Auditable status lifecycle'],
+      'The dashboard keeps live Base and Ethereum execution data in the foreground, while Bitcoin and Solana remain read-only visibility networks until adapters are installed.',
+    metrics: ['Live RPC + RTDB data', 'Observer-backed read-only assets', 'Unified operations view'],
   },
 ];
 
@@ -65,8 +65,8 @@ export default function Hero({ onOpenAuth }: HeroProps) {
           </h1>
 
           <p className="mt-8 max-w-2xl text-base leading-8 text-slate-600 md:text-xl">
-            Aima Protocol bridges Web2 AI agents and Web3 execution rails with strict domain controls,
-            human-in-the-loop approvals, and an operational surface designed for institutional trust.
+            Aima Protocol turns UTG into a Base-first operator surface for AI agents, crypto payments,
+            human approval gates, and live settlement telemetry across the rails that matter right now.
           </p>
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
@@ -155,16 +155,16 @@ export default function Hero({ onOpenAuth }: HeroProps) {
                   <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Preview payload</p>
                   <div className="mt-3 grid gap-2 text-sm text-slate-700">
                     <div className="flex items-center justify-between">
-                      <span>Email verification</span>
-                      <span className="font-mono text-[#b3842f]">In-app</span>
+                      <span>Primary auth</span>
+                      <span className="font-mono text-[#b3842f]">Sign in with Base</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Onboarding resume</span>
-                      <span className="font-mono text-[#b3842f]">Automatic</span>
+                      <span>Payments rail</span>
+                      <span className="font-mono text-[#b3842f]">Base Pay + x402</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Docs experience</span>
-                      <span className="font-mono text-[#b3842f]">/docs</span>
+                      <span>Execution scope</span>
+                      <span className="font-mono text-[#b3842f]">Base + Ethereum</span>
                     </div>
                   </div>
                 </div>
