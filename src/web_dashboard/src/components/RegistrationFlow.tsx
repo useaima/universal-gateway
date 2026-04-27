@@ -5,28 +5,23 @@ import {
   CheckCircle2,
   Lock,
   Mail,
-  Phone,
-  ShieldCheck,
   Sparkles,
 } from 'lucide-react';
 import {
   EmailAuthProvider,
-  PhoneAuthProvider,
   createUserWithEmailAndPassword,
   fetchSignInMethodsForEmail,
-  linkWithCredential,
   sendEmailVerification,
   signInWithEmailAndPassword,
-  signInWithPhoneNumber,
   signInWithPopup,
   signOut,
   type User,
 } from 'firebase/auth';
-import { auth, getEmailActionSettings, googleProvider, setupRecaptcha, verifyEnterpriseRecaptcha } from '../lib/firebase';
+import { auth, getEmailActionSettings, googleProvider, verifyEnterpriseRecaptcha } from '../lib/firebase';
 import { mergeUserProgress, type UserProgress } from '../lib/userProgress';
 import welcomeVisual from '../assets/welcome-visual.svg';
 
-type RegistrationView = 'welcome' | 'email_verification' | 'phone_verification';
+type RegistrationView = 'welcome' | 'email_verification';
 
 interface RegistrationFlowProps {
   view: RegistrationView;
@@ -66,9 +61,6 @@ export default function RegistrationFlow({
 }: RegistrationFlowProps) {
   const [email, setEmail] = useState(user?.email || localStorage.getItem(PENDING_EMAIL_STORAGE_KEY) || '');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState(user?.phoneNumber || userProgress?.phoneNumber || '');
-  const [otp, setOtp] = useState('');
-  const [verificationId, setVerificationId] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -178,75 +170,6 @@ export default function RegistrationFlow({
     }
   };
 
-  const handleSendSms = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setError(null);
-    setInfo(null);
-    setIsLoading(true);
-
-    try {
-      if (!auth.currentUser) {
-        throw new Error('Your authenticated session is no longer active. Sign in again to continue.');
-      }
-
-      if (auth.currentUser.phoneNumber && !userProgress?.phoneVerifiedAt) {
-        await mergeUserProgress(auth.currentUser.uid, {
-          phoneNumber: auth.currentUser.phoneNumber,
-          phoneVerifiedAt: new Date().toISOString(),
-        });
-        await syncAppState();
-        return;
-      }
-
-      await verifyEnterpriseRecaptcha('auth_phone_submit');
-
-      const recaptchaVerifier = setupRecaptcha('firebase-recaptcha-container');
-      const confirmationResult = await signInWithPhoneNumber(auth, phone, recaptchaVerifier);
-
-      setVerificationId(confirmationResult.verificationId);
-      setInfo(`We sent a verification code to ${phone}.`);
-    } catch (smsError) {
-      setError(getErrorMessage(smsError));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setError(null);
-    setInfo(null);
-    setIsLoading(true);
-
-    try {
-      if (!auth.currentUser) {
-        throw new Error('Your authenticated session is no longer active. Sign in again to continue.');
-      }
-
-      const credential = PhoneAuthProvider.credential(verificationId, otp);
-      const linked = await linkWithCredential(auth.currentUser, credential);
-
-      await mergeUserProgress(linked.user.uid, {
-        phoneNumber: linked.user.phoneNumber || phone,
-        phoneVerifiedAt: new Date().toISOString(),
-      });
-
-      await syncAppState();
-    } catch (otpError) {
-      if (otpError instanceof Error && otpError.message.includes('provider-already-linked') && auth.currentUser) {
-        await mergeUserProgress(auth.currentUser.uid, {
-          phoneNumber: auth.currentUser.phoneNumber || phone,
-          phoneVerifiedAt: new Date().toISOString(),
-        });
-        await syncAppState();
-      } else {
-        setError(getErrorMessage(otpError));
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleUseAnotherAccount = async () => {
     localStorage.removeItem(PENDING_EMAIL_STORAGE_KEY);
     await signOut(auth);
@@ -256,16 +179,12 @@ export default function RegistrationFlow({
   const heading =
     view === 'welcome'
       ? 'Welcome to the Universal Transaction Gateway'
-      : view === 'email_verification'
-        ? 'Verify your email to continue'
-        : 'Verify your phone to unlock onboarding';
+      : 'Verify your email to continue';
 
   const description =
     view === 'welcome'
       ? 'Sign in with Email, Password, or Google. We automatically resume the right step for existing and new users.'
-      : view === 'email_verification'
-        ? 'We sent a Firebase verification link. Open it from the same browser window and we will resume the flow automatically.'
-        : 'Phone verification is required before the existing onboarding wizard can continue.';
+      : 'We sent a Firebase verification link. Open it from the same browser window and we will resume the flow automatically.';
   const infoBanner = info || emailActionNotice;
 
   return (
@@ -379,7 +298,7 @@ export default function RegistrationFlow({
                       <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Verification address</p>
                       <p className="mt-2 text-lg font-semibold text-slate-900">{currentEmail}</p>
                       <p className="mt-2 text-sm leading-6 text-slate-500">
-                        Once the verification link is opened, this window will route you to phone verification or the dashboard automatically.
+                        Once the verification link is opened, this window will route you to onboarding or the dashboard automatically.
                       </p>
                     </div>
                   </div>
@@ -393,70 +312,6 @@ export default function RegistrationFlow({
                     Use Another Account
                   </button>
                 </div>
-              </div>
-            )}
-
-            {view === 'phone_verification' && (
-              <div className="mt-8 space-y-6">
-                <div className="rounded-3xl border border-[#eadfcf] bg-white/88 p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-amber-700">
-                      <ShieldCheck className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Authenticated email</p>
-                      <p className="mt-2 text-lg font-semibold text-slate-900">{currentEmail}</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-500">
-                        We protect phone submission with enterprise reCAPTCHA and Firebase&apos;s invisible SMS verifier.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <form onSubmit={verificationId ? handleVerifyOtp : handleSendSms} className="space-y-4">
-                  {!verificationId ? (
-                    <>
-                      <label className="block">
-                        <span className="mb-2 block text-xs font-mono uppercase tracking-[0.2em] text-[#9a8357]">Phone number</span>
-                        <div className="relative">
-                          <Phone className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-                          <input
-                            type="tel"
-                            required
-                            value={phone}
-                            onChange={(event) => setPhone(event.target.value)}
-                            placeholder="+1 555 000 0000"
-                            className="light-input pl-12"
-                          />
-                        </div>
-                      </label>
-                      <div id="firebase-recaptcha-container" />
-                      <button disabled={isLoading} type="submit" className="light-button-primary w-full justify-center py-4 disabled:opacity-70">
-                        <span>{isLoading ? 'Preparing secure SMS...' : 'Verify Phone'}</span>
-                        {!isLoading && <ArrowRight className="h-5 w-5" />}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <label className="block">
-                        <span className="mb-2 block text-xs font-mono uppercase tracking-[0.2em] text-[#9a8357]">Verification code</span>
-                        <input
-                          type="text"
-                          required
-                          maxLength={6}
-                          value={otp}
-                          onChange={(event) => setOtp(event.target.value)}
-                          placeholder="000000"
-                          className="light-input text-center font-mono text-lg tracking-[0.55em]"
-                        />
-                      </label>
-                      <button disabled={isLoading} type="submit" className="light-button-primary w-full justify-center py-4 disabled:opacity-70">
-                        <span>{isLoading ? 'Linking phone...' : 'Confirm Code'}</span>
-                        {!isLoading && <ArrowRight className="h-5 w-5" />}
-                      </button>
-                    </>
-                  )}
-                </form>
               </div>
             )}
           </section>
@@ -488,8 +343,8 @@ export default function RegistrationFlow({
                   <p className="mt-2 leading-6">Firebase verification links resume the same browser flow automatically.</p>
                 </div>
                 <div className="rounded-2xl border border-[#eadfcf] bg-white/84 p-4">
-                  <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Phone safeguard</p>
-                  <p className="mt-2 leading-6">Enterprise reCAPTCHA and Firebase SMS checks gate the next step before onboarding.</p>
+                  <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Session routing</p>
+                  <p className="mt-2 leading-6">Returning users continue directly into onboarding or the live dashboard without extra identity loops.</p>
                 </div>
               </div>
             </div>

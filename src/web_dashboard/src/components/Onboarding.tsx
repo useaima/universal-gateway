@@ -53,11 +53,6 @@ export default function Onboarding({ userEmail, onComplete }: OnboardingProps) {
           billingModel: "pay-as-you-go"
         };
 
-        if (auth.currentUser.phoneNumber) {
-          onboardingPayload.phoneNumber = auth.currentUser.phoneNumber;
-          onboardingPayload.phoneVerifiedAt = new Date().toISOString();
-        }
-
         await setDoc(doc(db, "users", auth.currentUser.uid), {
           ...onboardingPayload
         }, { merge: true });

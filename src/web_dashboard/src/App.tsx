@@ -105,9 +105,7 @@ function AppRoutes({
   );
 
   const needsEmailVerification = !!authUser && !authUser.emailVerified;
-  const needsPhoneVerification = !!authUser?.emailVerified && !userProgress?.phoneVerifiedAt;
-  const needsOnboarding = !!authUser?.emailVerified && !!userProgress?.phoneVerifiedAt && !userProgress?.onboardingCompletedAt;
-  const verificationView = needsEmailVerification ? 'email_verification' : 'phone_verification';
+  const needsOnboarding = !!authUser?.emailVerified && !userProgress?.onboardingCompletedAt;
 
   return (
     <Routes>
@@ -116,9 +114,9 @@ function AppRoutes({
         path="/welcome"
         element={
           authUser ? (
-            needsEmailVerification || needsPhoneVerification ? (
+            needsEmailVerification ? (
               <RegistrationFlow
-                view={verificationView}
+                view="email_verification"
                 user={authUser}
                 userProgress={userProgress}
                 emailActionNotice={emailActionNotice}
@@ -146,9 +144,9 @@ function AppRoutes({
         path="/app"
         element={
           authUser ? (
-            needsEmailVerification || needsPhoneVerification ? (
+            needsEmailVerification ? (
               <RegistrationFlow
-                view={verificationView}
+                view="email_verification"
                 user={authUser}
                 userProgress={userProgress}
                 emailActionNotice={emailActionNotice}

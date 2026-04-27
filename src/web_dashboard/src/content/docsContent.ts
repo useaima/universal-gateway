@@ -133,11 +133,11 @@ export const docsPages: DocsPage[] = [
     label: 'Auth & Onboarding',
     group: 'Getting Started',
     eyebrow: 'Identity Flow',
-    title: 'Email verification, phone verification, and guided setup',
+    title: 'Email verification, account resume, and guided setup',
     summary:
       'The frontend now resumes users based on Firebase Auth state plus Firestore progress flags so returning operators continue exactly where they stopped.',
     hero:
-      'Identity is progressive: email proves account ownership, phone proves operator presence, and onboarding captures operational context for the gateway.',
+      'Identity is progressive: email proves account ownership, resume logic picks the next incomplete step, and onboarding captures operational context for the gateway.',
     sections: [
       {
         id: 'welcome-entry',
@@ -152,12 +152,12 @@ export const docsPages: DocsPage[] = [
         id: 'verification-layers',
         title: 'Verification layers',
         body: [
-          'Email verification uses Firebase action links that route back into the app. Phone verification runs after email verification and uses enterprise reCAPTCHA plus Firebase SMS verification.',
+          'Email verification uses Firebase action links that route back into the app. On Firebase Spark, the flow resumes directly into onboarding after email verification instead of requiring phone auth.',
           'Progress is recorded in Firestore so users do not repeat completed steps.',
         ],
         bullets: [
           'Email verified before protected app access',
-          'Phone verified before onboarding completion',
+          'Returning users resume from their first incomplete step',
           'Onboarding completed before dashboard entry',
         ],
         code: {
