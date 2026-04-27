@@ -58,4 +58,27 @@ jobs:
         run: python -m compileall src/gateway
 
       - name: Run targeted smoke tests
-        run: pytest tests/test_idempotency_locking.py tests/test_ephemeral_purge.py tests/test_final_look_slippage.py
+        run: pytest tests/test_idempotency_locking.py tests/test_ephemeral_purge.py tests/test_final_look_slippage.py tests/test_gateway_public_contract.py
+
+  functions-build:
+    name: Firebase Functions Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: functions
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+
+      - name: Install functions dependencies
+        run: npm install
+
+      - name: Build functions
+        run: npm run build

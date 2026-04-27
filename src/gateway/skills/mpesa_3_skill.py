@@ -1,6 +1,8 @@
 import hmac
 import hashlib
 import base64
+import json
+import os
 import time
 from typing import Dict, Any
 
@@ -11,7 +13,7 @@ class Mpesa3Authenticator:
     """
     def __init__(self, api_secret: str = None):
         # In production, this secret comes from Safaricom's Developer Portal
-        self.api_secret = api_secret or "DEMO_MPESA_SECRET_2026"
+        self.api_secret = api_secret or os.environ.get("MPESA_API_SECRET") or "DEMO_MPESA_SECRET_2026"
 
     def verify_callback_signature(self, signature_header: str, body_payload: str) -> bool:
         """
@@ -41,9 +43,25 @@ class Mpesa3Skill:
     """
     def __init__(self):
         self.auth = Mpesa3Authenticator()
+        self.support_tier = "experimental"
 
     async def initiate_stk_push(self, phone: str, amount: float, reason: str) -> Dict[str, Any]:
         """Triggers a cloud-native STK Push under the Daraja 3.0 flow."""
+        missing = [
+            name
+            for name in ["MPESA_API_SECRET", "MPESA_SHORTCODE", "MPESA_CALLBACK_URL"]
+            if not os.environ.get(name)
+        ]
+        if missing:
+            return {
+                "status": "UNAVAILABLE",
+                "support_tier": self.support_tier,
+                "error": (
+                    "M-Pesa remains experimental until production callback signing, webhook routing, and provider "
+                    f"credentials are configured. Missing environment variables: {', '.join(missing)}."
+                ),
+            }
+
         checkout_id = self.auth.generate_checkout_id(phone)
         
         # In a real integration, this sends to Safaricom's /stkpush/v3 endpoint
@@ -51,6 +69,7 @@ class Mpesa3Skill:
         
         return {
             "status": "PENDING_PIN_ENTRY",
+            "support_tier": self.support_tier,
             "CheckoutRequestID": checkout_id,
             "instructions": "Enter your M-Pesa PIN on your phone to authorize the transaction."
         }

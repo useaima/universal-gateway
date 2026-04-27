@@ -16,7 +16,7 @@ class IdempotencyCollisionError(Exception):
 
 class ExecutionWrapper:
     """
-    FORTIFIED UTG GaaS Execution Wrapper.
+    Fortified UTG execution wrapper.
     Handles Edge Cases: Clock Drift, Network Failure, and Double-Purchasing.
     """
     def __init__(self, user_id: str):
@@ -32,7 +32,7 @@ class ExecutionWrapper:
 
     async def execute_task(self, task_name: str, step_fn: Callable[[], Awaitable[Any]], initial_quote: float = None, transaction_id: str = None):
         """Standardizes the lifecycle: Log -> PreFlight -> Execute -> Verify -> Cleanup."""
-        print(f"[UTG GaaS] Wrapping task: {task_name} (User: {self.user_id})", file=sys.stderr)
+        print(f"[UTG] Wrapping task: {task_name} (User: {self.user_id})", file=sys.stderr)
         
         # 1. Edge Case: Clock Drift Check (Compliance requirement for AP2/JWT)
         self._check_clock_drift()

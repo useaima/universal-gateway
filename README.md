@@ -1,121 +1,202 @@
-<h1 align="center">
-  🏦 UTG GaaS: Universal Transaction Gateway
-</h1>
+# Universal Transaction Gateway
 
-<p align="center">
-# Aima Universal Transaction Gateway (UTG)
+UTG is an open-source, self-hosted MCP gateway for agentic finance.
 
-![Universal Transaction Gateway Hero](docs_site/assets/utg_hero.png)
+It sits between an agent and real-value execution so operators can connect OpenClaw, Claude Desktop, Telegram-driven workflows, or custom MCP clients without handing raw wallet custody to the model. Base and Ethereum are the first-class execution rails today. Human-in-the-loop approval is always enforced for value-moving actions.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](https://choosealicense.com/licenses/mit/)
-[![Status: Experimental](https://img.shields.io/badge/Status-Experimental-orange.svg)]()
-[![Model Context Protocol](https://img.shields.io/badge/MCP-Compatible-blue.svg)]()
+[![MCP-Compatible](https://img.shields.io/badge/MCP-Compatible-blue.svg)]()
+[![OSS Self-Hosted](https://img.shields.io/badge/Deployment-Self--Hosted-gold.svg)]()
 
-> **The Biometric Firewall for AI Agents.** A non-custodial, human-in-the-loop (HITL) settlement protocol for OpenClaw and autonomous AI ecosystems.
+## What UTG is
 
----
+- An MCP-first gateway for agent-triggered finance
+- A non-custodial control layer with approval interrupts
+- A Base/Ethereum execution wrapper with replay protection
+- A live operations surface backed by Firebase telemetry
+- An open-source runtime you can wire into your own agent stack
 
-## 🛡️ The "Safety Sandwich" Architecture
+## Support Matrix
 
-![Safety Sandwich Architecture](docs_site/assets/safety_sandwich.png)
+| Tier | What real users can rely on today |
+| --- | --- |
+| `stable` | Base and Ethereum transfers, HITL approval enforcement, MCP integration, dashboard telemetry, idempotent retries |
+| `beta` | Commerce search and browser-assisted checkout handover when the operator configures the required provider adapters |
+| `experimental` | M-Pesa and fiat-adjacent payment rails until provider credentials, signed callbacks, and webhook runbooks are fully hardened |
 
-The Aima UTG solves the "Identity Gap" in Agentic Commerce. You cannot give an AI agent your raw private key. Instead, the UTG dynamically intercepts the agent's *intent*, generates a cryptographic lock in a local SQLite vault, and physically **HALTS** the execution until the human provides a 6-digit Multi-Party Computation (MPC) PIN.
+## Product Contract
 
----
+UTG is described the same way across the codebase, docs, and raw skill artifact:
 
-## 🌟 Overview
+- **Launch model:** open-source, self-hosted first
+- **Primary user path:** MCP integration for OpenClaw and custom agents
+- **Operator channels:** Telegram, Slack, TUI chat, or other surfaces layered on top of the gateway
+- **Execution rails:** Base and Ethereum are executable; Bitcoin and Solana are observer/read-only networks for now
+- **HITL invariant:** any value-moving action can pause for operator approval; the gateway never weakens this rule
 
-**UTG GaaS** is a Model Context Protocol (MCP) server that acts as a secure financial bridge between AI Agents (like OpenClaw or Claude Desktop) and the real-world economy. 
-
-It provides a high-consistency, non-custodial gateway for executing DeFi trades, automated e-commerce, and M-Pesa transactions. By adhering to the **Eva Protocol Stack** and **x402 Payment Specifications**, UTG natively supports autonomous, agent-to-agent negotiations while keeping the human user safely in the loop.
-
----
-
-## 🏗️ Architecture: The Eva Protocol Stack
+## Architecture
 
 ```mermaid
 graph TD
-    A[AI Agent Client <br/> e.g., OpenClaw] -->|MCP JSON-RPC| B(UTG Gateway Server)
-    
-    subgraph UTG GaaS Core
-        B --> C{Idempotency Engine}
-        C -->|Check Status| D[(Vault: SQLite)]
-        C -->|X-Idempotency-Key| E[Durable Executor <br/> Saga Pattern]
-    end
-    
-    E -.->|402 Handshake| F[x402 Handler]
-    E -->|Approved Mandate| G[Browser Automation <br/> Local Camoufox / Cloud Browserbase]
-    E -->|Approved Mandate| H[Safaricom / DeFi Nodes]
-    
-    F -.->|Approval Request| A
+    A["Agent client (OpenClaw, Claude, custom MCP)"] -->|MCP JSON-RPC| B["UTG gateway server"]
+    B --> C["Tool and skill registry"]
+    C --> D["Policy and HITL service"]
+    D --> E["Execution wrapper + idempotency"]
+    E --> F["Base / Ethereum execution"]
+    E --> G["Audit + receipt publisher"]
+    G --> H["SQLite lifecycle logs"]
+    G --> I["Firebase RTDB dashboard"]
+    C --> J["Commerce + handover beta adapters"]
+    C --> K["x402 payment challenge contract"]
 ```
 
----
+## Quick Start
 
-## 🛡️ Core Features
+### 1. Install
 
-*   **Consistency (CP) Over Availability**: Driven by the `IdempotencyManager`, the gateway prevents "Double-Spend" catastrophes. If a network flickers, the system locks state rather than executing a duplicate transaction.
-*   **x402 Protocol Support**: Full compliance with the `HTTP 402` "Payment Required" standard, allowing agents to solve paywalls mid-reasoning.
-*   **Durable Sagas**: Executes multi-step workflows (e.g., *M-Pesa -> Stablecoin Swap -> Transfer*) with automated compensating rollbacks if any step fails.
-*   **Non-Custodial Design**: Uses an MPC-style "Signature Share" handshake. The gateway simulates transactions but never controls your full private keys.
-*   **Cryptographic Audit Vault**: Every transaction generates a legally verifiable, Ed25519-signed PDF statement.
-
----
-
-## 🚀 Quick Start (Zero-Code)
-
-We prioritize a developer-friendly onboarding experience.
-
-### 1. Installation
-Install the gateway globally via `pip` or `Make`:
 ```bash
-# Using Make
-make install
-
-# OR using Pip directly
 pip install .
 ```
 
-### 2. The Onboarding Wizard
-Run the interactive wizard to generate your cryptographic identity and setup your environment securely:
+For local development:
+
+```bash
+pip install -e .
+```
+
+### 2. Create an operator config
+
+Run the onboarding wizard:
+
 ```bash
 utg-onboard
 ```
 
-### 3. Connect to your Agent
-The wizard will output an MCP configuration snippet. Paste it into your OpenClaw or Claude Desktop configuration:
+At minimum, stable Base/Ethereum usage should end up with:
+
+```bash
+GATEWAY_PASSCODE=...
+BASE_PRIVATE_KEY=0x...
+ETHEREUM_PRIVATE_KEY=0x...
+BASE_RPC_URL=https://mainnet.base.org
+ETHEREUM_RPC_URL=https://mainnet.gateway.tenderly.co/public
+TREASURY_ADDRESS=0x...
+AIMA_API_KEY=...
+```
+
+### 3. Validate the deployment profile
+
+```bash
+python src/gateway/utils/setup_validator.py
+```
+
+This checks the repo against the same support tiers documented in the docs site:
+
+- `stable`: gateway passcode, treasury, Base/Ethereum RPCs
+- `beta`: commerce provider plus browser handover adapter
+- `experimental`: M-Pesa provider credentials and callback routing
+
+### 4. Start the gateway
+
+```bash
+python src/gateway/server.py
+```
+
+### 5. Connect an MCP client
+
+OpenClaw, Claude Desktop, or any custom MCP client can connect over stdio:
+
 ```json
-"mcpServers": {
-  "utg-gateway": {
-    "command": "python",
-    "args": ["/absolute/path/to/universal-transaction-gateway/src/gateway/server.py"]
+{
+  "mcpServers": {
+    "utg-gateway": {
+      "command": "python",
+      "args": ["/absolute/path/to/universal-transaction-gateway/src/gateway/server.py"],
+      "env": {
+        "AIMA_API_KEY": "...",
+        "BASE_RPC_URL": "...",
+        "ETHEREUM_RPC_URL": "...",
+        "TREASURY_ADDRESS": "0x..."
+      }
+    }
   }
 }
 ```
 
----
+## Real User Flows
 
-## 📚 Official Documentation
+### OpenClaw or custom MCP agent
 
-Explore the full potential of the Universal Transaction Gateway on our [Documentation Portal](docs_site/index.html) (hosted seamlessly on Vercel at `utg.useaima.com`).
+1. The agent calls `request_eth_transfer_reliable`
+2. UTG halts the transfer under HITL
+3. The operator provides the gateway passcode in their chosen chat or TUI surface
+4. The agent calls `submit_signature_share`
+5. The original transfer is retried with the same request, and the gateway resumes safely
 
-*   **[Installation Details](docs_site/index.html#installation)**: Platform-specific guides (macOS, Windows, Linux).
-*   **[Tool Reference](docs_site/index.html#api)**: Detailed MCP tool schemas.
+### x402-paid service
 
----
+1. The agent hits a payment-required boundary
+2. UTG returns a canonical x402 challenge contract
+3. The agent or operator settles the payment proof
+4. The original request is retried with the same idempotency context
 
-## 🤝 Contributing
+### Commerce beta
 
-We welcome contributions from the open-source community to advance the Agentic Economy! 
+1. The agent calls `search_and_compare`
+2. UTG checks whether a commerce provider is configured
+3. If the provider is missing, the tool fails clearly instead of inventing results
+4. If configured, the operator can continue into `request_order`, which routes to a browser handover workflow
 
-Please review our [Contributing Guidelines](CONTRIBUTING.md) to get started. Be sure to check our issue templates for bug reports and feature requests. We expect all contributors to adhere to our [Code of Conduct](CODE_OF_CONDUCT.md).
+## Public MCP Surface
 
-## 🔒 Security
+Current public tools:
 
-For responsible disclosure of vulnerabilities, please see our [Security Policy](SECURITY.md).
+- `request_eth_transfer_reliable`
+- `search_and_compare`
+- `request_order`
+- `request_human_handover`
+- `submit_signature_share`
+- `get_a2a_agent_card`
 
----
+Backward compatibility note: tool names stay stable in v1 so existing OpenClaw or custom-agent configs do not break during internal refactors.
 
-## 📄 License
+## Docs
 
-This software is released under the [MIT License](LICENSE).
+The canonical docs experience lives at:
+
+- [utg.useaima.com/docs](https://utg.useaima.com/docs)
+- Raw agent contract: [utg.useaima.com/docs/skill.md](https://utg.useaima.com/docs/skill.md)
+
+The docs site covers:
+
+- support matrix
+- self-hosting and environment setup
+- OpenClaw integration
+- custom MCP agent integration
+- Telegram and operator-channel patterns
+- Base payments and x402
+- contract deployment
+- commerce automation and browser handover prerequisites
+- M-Pesa experimental setup
+
+## Base and Ethereum
+
+UTG is designed to work well with a Base-first product strategy:
+
+- Base and Ethereum are the stable execution rails
+- Base user payments and x402 service payments can coexist
+- The gateway remains the policy and approval boundary rather than becoming a custodial wallet
+
+## Contributing
+
+Contributions are welcome. The easiest way to help is to improve the stable operator path, strengthen tests around approval and retries, or harden provider-backed beta surfaces.
+
+Please review:
+
+- [CONTRIBUTING.md](CONTRIBUTING.md)
+- [SECURITY.md](SECURITY.md)
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
+## License
+
+[MIT](LICENSE)

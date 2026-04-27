@@ -11,7 +11,7 @@ class DurableWorkflowStep:
 
 class DurableExecutor:
     """
-    Inspired by Temporal.io. Implements a durable 'Saga Pattern' for UTG GaaS.
+    Inspired by Temporal.io. Implements a durable saga pattern for UTG.
     Ensures multi-step financial flows either satisfy fully or roll back cleanly.
     """
     def __init__(self, user_id: str):

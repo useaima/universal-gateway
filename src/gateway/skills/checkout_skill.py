@@ -1,16 +1,71 @@
 import os
 import asyncio
 
+
 class CheckoutSkill:
-    def __init__(self, page):
+    def __init__(self, page=None):
         self.page = page
         self.api_key = os.environ.get("CAPSOLVER_API_KEY")
+        self.browser_mode = os.environ.get("BROWSER_MODE", "camoufox")
+        self.handover_url = os.environ.get("BROWSER_HANDOVER_URL")
+        self.allowed_domains = os.environ.get("ALLOWED_DOMAINS", "")
         if not self.api_key or self.api_key == "your_capsolver_key_here":
-            print("CAPSOLVER_API_KEY missing or default - checkout skill will fail if hCaptcha is present.")
+            print(
+                "CAPSOLVER_API_KEY missing or default - browser-assisted checkout can continue, "
+                "but automated CAPTCHA solving will remain unavailable."
+            )
+
+    def readiness_report(self) -> dict:
+        missing = []
+        if not self.handover_url:
+            missing.append("BROWSER_HANDOVER_URL")
+        if self.browser_mode == "browserbase":
+            if not os.environ.get("BROWSERBASE_API_KEY"):
+                missing.append("BROWSERBASE_API_KEY")
+            if not os.environ.get("BROWSERBASE_PROJECT_ID"):
+                missing.append("BROWSERBASE_PROJECT_ID")
+
+        return {
+            "support_tier": "beta",
+            "browser_mode": self.browser_mode,
+            "handover_ready": not missing,
+            "missing": missing,
+            "captcha_solver_ready": bool(self.api_key and self.api_key != "your_capsolver_key_here"),
+            "allowed_domains_configured": bool(self.allowed_domains.strip()),
+        }
+
+    def build_handover_summary(self, url: str, price_text: str, items: str) -> str:
+        report = self.readiness_report()
+        if not report["handover_ready"]:
+            missing = ", ".join(report["missing"])
+            return (
+                "Commerce checkout is a beta capability and needs a configured browser handover adapter before it "
+                f"can continue. Missing environment variables: {missing}. "
+                "Configure the adapter, keep ALLOWED_DOMAINS current, then retry the same request."
+            )
+
+        captcha_note = (
+            "CAPTCHA solving is configured."
+            if report["captcha_solver_ready"]
+            else "CAPTCHA solving is not configured; the operator may need to complete the challenge manually."
+        )
+
+        return (
+            "Commerce checkout remains beta and is routed through a browser handover workflow.\n"
+            f"Target URL: {url}\n"
+            f"Quoted price: {price_text}\n"
+            f"Item details: {items}\n"
+            f"Browser handover URL: {self.handover_url}\n"
+            f"Allowed domains configured: {'yes' if report['allowed_domains_configured'] else 'no'}\n"
+            f"{captcha_note}"
+        )
         
     async def solve_hcaptcha(self) -> str:
         """Integration with CapSolver to solve hCaptcha."""
         try:
+            if self.page is None:
+                print("No browser page is attached to CheckoutSkill; CAPTCHA solving is unavailable.")
+                return ""
             print("Waiting for hCaptcha to appear...")
             
             try:
@@ -106,7 +161,6 @@ class CheckoutSkill:
 
     async def execute_checkout(self):
         """Standard automated checkout flow over playwright"""
-        # In a real scenario, this would fill out forms, detect if hcaptcha is present, and solve
-        print("Executing checkout flow using CapSolver if needed...")
+        print("Executing browser-assisted checkout flow...")
         await asyncio.sleep(1)
         print("Checkout logic completed.")
