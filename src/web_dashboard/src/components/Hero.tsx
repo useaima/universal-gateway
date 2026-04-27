@@ -159,8 +159,8 @@ export default function Hero({ onOpenAuth }: HeroProps) {
                       <span className="font-mono text-[#b3842f]">In-app</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span>Phone protection</span>
-                      <span className="font-mono text-[#b3842f]">reCAPTCHA</span>
+                      <span>Onboarding resume</span>
+                      <span className="font-mono text-[#b3842f]">Automatic</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Docs experience</span>

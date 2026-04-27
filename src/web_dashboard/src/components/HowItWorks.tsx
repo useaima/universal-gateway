@@ -37,9 +37,9 @@ export default function HowItWorks() {
 
             <div className="light-card p-8">
               <Wallet className="mb-6 h-10 w-10 text-amber-600" />
-              <h3 className="text-xl font-semibold text-slate-900">Verify phone with layered protection</h3>
+              <h3 className="text-xl font-semibold text-slate-900">Move straight into guided setup</h3>
               <p className="mt-3 text-sm leading-7 text-slate-500">
-                Enterprise reCAPTCHA protects the submit action, while Firebase&apos;s SMS verifier handles the final phone challenge.
+                On Spark, we keep the identity flow lighter: email verification completes the auth checkpoint, then the existing onboarding wizard takes over.
               </p>
             </div>
 

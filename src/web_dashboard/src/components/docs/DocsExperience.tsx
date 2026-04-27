@@ -103,7 +103,7 @@ function DocsVisualBlock({ visual }: { visual: DocsVisual }) {
           <div className="grid gap-4 lg:grid-cols-5">
             <StepCard title="Welcome" detail="Email/password or Google entry" tone="slate" />
             <StepCard title="Email" detail="Verification link returns in-app" tone="gold" />
-            <StepCard title="Phone" detail="reCAPTCHA + SMS verification" tone="amber" />
+            <StepCard title="Resume" detail="Account state sync decides the next screen" tone="amber" />
             <StepCard title="Onboarding" detail="Wallet, network, and policy setup" tone="emerald" />
             <StepCard title="Dashboard" detail="Live command center access" tone="slate" />
           </div>
