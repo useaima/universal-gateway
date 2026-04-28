@@ -12,19 +12,19 @@ export default function Navbar({ onStart }: NavbarProps) {
           <img src="/logo.png" alt="Aima Logo" className="h-10 w-10 rounded-full border border-[#eadfcf] bg-white/80 p-1.5 object-contain" />
           <div>
             <span className="block text-lg font-semibold text-slate-900 md:text-xl">Aima Protocol</span>
-            <span className="hidden text-[11px] font-mono uppercase tracking-[0.24em] text-[#9a8357] md:block">
+            <span className="hidden text-[12px] font-mono uppercase tracking-[0.22em] text-[#6f4e17] md:block">
               Universal Transaction Gateway
             </span>
           </div>
         </div>
 
-        <nav className="hidden items-center gap-8 text-sm font-mono tracking-wide text-slate-500 lg:flex">
-          <a href="#overview" className="transition hover:text-slate-900">Overview</a>
-          <a href="#how-it-works" className="transition hover:text-slate-900">Flow</a>
-          <a href="#features" className="transition hover:text-slate-900">Capabilities</a>
-          <a href="#protocol-media" className="transition hover:text-slate-900">Media</a>
-          <Link to="/docs" className="transition hover:text-slate-900">Documentation</Link>
-          <a href="#support" className="transition hover:text-[#b3842f]">Support</a>
+        <nav className="hidden items-center gap-8 text-sm font-mono tracking-wide text-[#2d2d2d] lg:flex">
+          <a href="#overview" className="transition hover:text-black">Overview</a>
+          <a href="#how-it-works" className="transition hover:text-black">Flow</a>
+          <a href="#features" className="transition hover:text-black">Capabilities</a>
+          <a href="#protocol-media" className="transition hover:text-black">Media</a>
+          <Link to="/docs" className="transition hover:text-black">Documentation</Link>
+          <a href="#support" className="transition hover:text-[#7c5512]">Support</a>
         </nav>
 
         <div className="flex items-center gap-3">

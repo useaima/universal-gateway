@@ -64,7 +64,7 @@ export default function Hero({ onOpenAuth }: HeroProps) {
             </span>
           </h1>
 
-          <p className="mt-8 max-w-2xl text-base leading-8 text-slate-600 md:text-xl">
+          <p className="mt-8 max-w-2xl text-lg leading-9 text-[#222222] md:text-[1.35rem]">
             Aima Protocol turns UTG into an MCP-first gateway for real operators: Base and Ethereum execution,
             human approval gates, live telemetry, and honest support tiers for everything that still needs extra wiring.
           </p>
@@ -81,19 +81,19 @@ export default function Hero({ onOpenAuth }: HeroProps) {
 
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
             <div className="light-card p-5">
-              <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Approvals</p>
+              <p className="reading-label">Approvals</p>
               <p className="mt-4 text-3xl font-semibold text-slate-900">HITL</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">Threshold-driven signature enforcement and auditable interrupts.</p>
+              <p className="mt-2 text-base leading-7 text-[#333333]">Threshold-driven signature enforcement and auditable interrupts.</p>
             </div>
             <div className="light-card p-5">
-              <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Security</p>
+              <p className="reading-label">Security</p>
               <p className="mt-4 text-3xl font-semibold text-slate-900">Guardrails</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">Deterministic replay protection, policy validation, and domain controls.</p>
+              <p className="mt-2 text-base leading-7 text-[#333333]">Deterministic replay protection, policy validation, and domain controls.</p>
             </div>
             <div className="light-card p-5">
-              <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Support</p>
+              <p className="reading-label">Support</p>
               <p className="mt-4 text-3xl font-semibold text-slate-900">Tiered</p>
-              <p className="mt-2 text-sm leading-6 text-slate-500">Stable Base and Ethereum flows, beta commerce adapters, and explicit experimental rails.</p>
+              <p className="mt-2 text-base leading-7 text-[#333333]">Stable Base and Ethereum flows, beta commerce adapters, and explicit experimental rails.</p>
             </div>
           </div>
         </div>
@@ -131,40 +131,40 @@ export default function Hero({ onOpenAuth }: HeroProps) {
                       ))}
                     </div>
                   </div>
-                  <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">
+                  <p className="reading-label">
                     {currentSlide.label}
                   </p>
                   <h2 className="mt-3 text-2xl font-semibold leading-tight text-slate-900">
                     {currentSlide.title}
                   </h2>
-                  <p className="mt-3 text-sm leading-7 text-slate-600">{currentSlide.detail}</p>
+                  <p className="mt-3 text-base leading-8 text-[#2f2f2f]">{currentSlide.detail}</p>
                 </div>
 
                 <div className="grid gap-3">
                   {currentSlide.metrics.map((metric, index) => (
                     <div key={metric} className="rounded-2xl border border-[#eadfcf] bg-[#fff7e7] px-4 py-3">
-                      <div className="flex items-center justify-between gap-4 text-sm text-slate-700">
+                      <div className="flex items-center justify-between gap-4 text-[15px] text-[#232323]">
                         <span>{metric}</span>
-                        <span className="font-mono text-[#b3842f]">0{index + 1}</span>
+                        <span className="font-mono text-[#8c6319]">0{index + 1}</span>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 <div className="rounded-2xl border border-[#eadfcf] bg-white/92 p-4">
-                  <p className="text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">Preview payload</p>
-                  <div className="mt-3 grid gap-2 text-sm text-slate-700">
+                  <p className="reading-label">Preview payload</p>
+                  <div className="mt-3 grid gap-2 text-[15px] text-[#232323]">
                     <div className="flex items-center justify-between">
                       <span>Primary path</span>
-                      <span className="font-mono text-[#b3842f]">MCP integration</span>
+                      <span className="font-mono text-[#8c6319]">MCP integration</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Payments rail</span>
-                      <span className="font-mono text-[#b3842f]">Base + x402</span>
+                      <span className="font-mono text-[#8c6319]">Base + x402</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span>Execution scope</span>
-                      <span className="font-mono text-[#b3842f]">Base + Ethereum</span>
+                      <span className="font-mono text-[#8c6319]">Base + Ethereum</span>
                     </div>
                   </div>
                 </div>

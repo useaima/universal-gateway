@@ -25,10 +25,10 @@ function ShowcaseShell({
   return (
     <article className="light-panel grid gap-8 p-6 md:p-8 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
       <div>
-        <p className="text-xs font-mono uppercase tracking-[0.24em] text-[#9a8357]">{index}</p>
+        <p className="reading-label">{index}</p>
         <div className="light-eyebrow mt-4">{eyebrow}</div>
         <h3 className="mt-5 text-3xl font-semibold text-slate-900 md:text-4xl">{title}</h3>
-        <p className="mt-5 max-w-xl text-base leading-8 text-slate-600">{description}</p>
+        <p className="mt-5 max-w-xl text-lg leading-9 text-[#242424]">{description}</p>
       </div>
       <div>{children}</div>
     </article>
@@ -45,11 +45,11 @@ function SafetyLayersVisual() {
       ].map(([title, detail], index) => (
         <div key={title} className="rounded-3xl border border-[#eadfcf] bg-white/90 p-5">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-mono uppercase tracking-[0.2em] text-[#9a8357]">Layer {index + 1}</p>
+            <p className="reading-label">Layer {index + 1}</p>
             <ShieldCheck className="h-4 w-4 text-[#b3842f]" />
           </div>
           <h4 className="mt-3 text-xl font-semibold text-slate-900">{title}</h4>
-          <p className="mt-2 text-sm leading-7 text-slate-500">{detail}</p>
+          <p className="mt-2 text-base leading-8 text-[#333333]">{detail}</p>
         </div>
       ))}
     </div>
@@ -72,14 +72,14 @@ function ApprovalVisual() {
 
         <div className="mt-5 grid gap-4 md:grid-cols-2">
           <div className="rounded-2xl border border-[#eadfcf] bg-white/90 p-4">
-            <p className="text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">Agent reasoning</p>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
+            <p className="reading-label">Agent reasoning</p>
+            <p className="mt-3 text-base leading-8 text-[#333333]">
               Identified spread across two liquidity venues and proposed a transfer above the operator threshold.
             </p>
           </div>
           <div className="rounded-2xl border border-[#eadfcf] bg-white/90 p-4">
-            <p className="text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">Policy trigger</p>
-            <p className="mt-3 text-sm leading-7 text-slate-600">
+            <p className="reading-label">Policy trigger</p>
+            <p className="mt-3 text-base leading-8 text-[#333333]">
               Transaction exceeds daily autonomous limit and requires positive operator signature before settlement.
             </p>
           </div>
@@ -103,18 +103,18 @@ function IdempotencyVisual() {
     <div className="rounded-[30px] border border-[#e6d8c2] bg-[#fffef8] p-6 shadow-[0_28px_72px_rgba(111,86,44,0.08)]">
       <div className="grid gap-4 md:grid-cols-[1fr_auto_1fr_auto_1fr] md:items-center">
         <div className="rounded-2xl border border-[#eadfcf] bg-white p-4">
-          <p className="text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">Request flood</p>
-          <p className="mt-3 text-sm leading-7 text-slate-600">Retry x100 from the same agent task.</p>
+          <p className="reading-label">Request flood</p>
+          <p className="mt-3 text-base leading-8 text-[#333333]">Retry x100 from the same agent task.</p>
         </div>
         <Repeat2 className="mx-auto h-5 w-5 text-[#b3842f]" />
         <div className="rounded-2xl border border-[#eadfcf] bg-[#fff7e7] p-4">
-          <p className="text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">Idempotency lock</p>
-          <p className="mt-3 text-sm leading-7 text-slate-600">The key is held once, and duplicate intent becomes memoized state.</p>
+          <p className="reading-label">Idempotency lock</p>
+          <p className="mt-3 text-base leading-8 text-[#333333]">The key is held once, and duplicate intent becomes memoized state.</p>
         </div>
         <ArrowRight className="mx-auto h-5 w-5 text-[#b3842f]" />
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
           <p className="text-xs font-mono uppercase tracking-[0.18em] text-emerald-700">Single settlement</p>
-          <p className="mt-3 text-sm leading-7 text-emerald-900">One final result, no duplicate spend, clean replay semantics.</p>
+          <p className="mt-3 text-base leading-8 text-emerald-950">One final result, no duplicate spend, clean replay semantics.</p>
         </div>
       </div>
     </div>
@@ -127,19 +127,20 @@ function RealtimeVisual() {
       <div className="grid gap-4 lg:grid-cols-[0.78fr_1.22fr]">
         <div className="space-y-4">
           {[
-            ['30-day volume', '$8.4M'],
-            ['Active agents', '38'],
-            ['Pending signatures', '14'],
+            ['Source 01', 'dashboard_live/summary'],
+            ['Source 02', 'dashboard_live/transactions'],
+            ['Source 03', 'gas_live/base'],
           ].map(([label, value]) => (
             <div key={label} className="rounded-2xl border border-[#eadfcf] bg-white p-4">
-              <p className="text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">{label}</p>
-              <p className="mt-3 text-2xl font-semibold text-slate-900">{value}</p>
+              <p className="reading-label">{label}</p>
+              <p className="mt-3 text-lg font-semibold text-slate-900">{value}</p>
+              <p className="mt-2 text-base leading-7 text-[#333333]">Realtime node consumed by the operator dashboard.</p>
             </div>
           ))}
         </div>
         <div className="rounded-[28px] border border-[#eadfcf] bg-[linear-gradient(180deg,#fff9ee,#fff)] p-5">
           <div className="mb-4 flex items-center justify-between">
-            <p className="text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">Protocol throughput</p>
+            <p className="reading-label">Protocol throughput</p>
             <BarChart3 className="h-4 w-4 text-[#b3842f]" />
           </div>
           <svg viewBox="0 0 320 180" className="h-52 w-full">
@@ -168,26 +169,26 @@ function TrustMapVisual() {
         <div className="rounded-2xl border border-[#eadfcf] bg-white/92 p-5">
           <Bot className="h-9 w-9 text-[#b3842f]" />
           <h4 className="mt-4 text-xl font-semibold text-slate-900">Agent systems</h4>
-          <p className="mt-2 text-sm leading-7 text-slate-500">
+          <p className="mt-2 text-base leading-8 text-[#333333]">
             Propose actions, reason about opportunities, and wait for clear gateway responses.
           </p>
         </div>
         <div className="rounded-2xl border border-[#e5c980] bg-[#fff7e5] p-5">
           <Network className="h-9 w-9 text-[#b3842f]" />
           <h4 className="mt-4 text-xl font-semibold text-slate-900">UTG policy nexus</h4>
-          <p className="mt-2 text-sm leading-7 text-slate-600">
+          <p className="mt-2 text-base leading-8 text-[#333333]">
             Identity, approvals, telemetry, and execution guarantees converge in the control layer.
           </p>
         </div>
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
           <Wallet className="h-9 w-9 text-emerald-700" />
           <h4 className="mt-4 text-xl font-semibold text-slate-900">Settlement rails</h4>
-          <p className="mt-2 text-sm leading-7 text-emerald-900">
+          <p className="mt-2 text-base leading-8 text-emerald-950">
             Funds move only after policy and approval boundaries are satisfied.
           </p>
         </div>
       </div>
-      <div className="mt-5 flex items-center justify-center gap-3 text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">
+      <div className="mt-5 flex items-center justify-center gap-3 text-xs font-mono uppercase tracking-[0.18em] text-[#6f4e17]">
         <span>Intent</span>
         <ArrowRight className="h-4 w-4" />
         <span>Review</span>
@@ -207,7 +208,7 @@ export default function ProtocolShowcase() {
           <h2 className="text-4xl font-semibold text-slate-900 md:text-5xl">
             Five more production scenes behind the hero slideshow
           </h2>
-          <p className="mx-auto mt-5 max-w-3xl text-lg leading-8 text-slate-500">
+          <p className="mx-auto mt-5 max-w-3xl text-lg leading-9 text-[#2b2b2b]">
             The landing page now carries the protocol story through concrete visual artifacts: layered safety, review flow, replay protection, live analytics, and settlement topology.
           </p>
         </div>
