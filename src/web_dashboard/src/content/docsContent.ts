@@ -104,6 +104,7 @@ export const docsPages: DocsPage[] = [
           'submit_signature_share',
           'get_a2a_agent_card',
           'live dashboard telemetry through Firebase RTDB',
+          'no public swap execution tool is exposed in the current gateway runtime',
         ],
         callout: {
           tone: 'success',
@@ -420,6 +421,7 @@ export const docsPages: DocsPage[] = [
         body: [
           'Base user-facing payments and x402 paid API flows solve different problems. Base is the user settlement surface; x402 is the challenge-and-retry pattern for agent-to-agent access.',
           'The runtime now uses a single canonical x402 challenge contract so custom agents can parse payment-required states consistently.',
+          'This payment surface is not the same thing as a swap surface. The current public gateway contract does not expose a real token swap tool, so the docs do not present swaps as a supported execution capability.',
         ],
         bullets: [
           'Base for user-facing USDC and onchain payment events',
