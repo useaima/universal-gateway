@@ -36,9 +36,24 @@ const calloutStyles: Record<DocsCallout['tone'], string> = {
   success: 'border-emerald-200 bg-emerald-50/90 text-emerald-950',
 };
 
+const visualNotes: Partial<Record<DocsVisual, string>> = {
+  architecture:
+    'Operationally, this means the agent never talks directly to settlement. Every value-moving request passes through policy, approval, and audit boundaries first.',
+  'request-flow':
+    'Operationally, a halted request is a normal state. Agents should ask for approval, submit the signature share, and then retry the original request instead of fabricating a new one.',
+  'safety-sandwich':
+    'Operationally, the control model is layered on purpose so a single bug or missed provider check does not silently turn into value movement.',
+  'analytics-pipeline':
+    'Operationally, the dashboard is reading normalized lifecycle data, not a disconnected marketing shell. The same trees back review, metrics, and transaction inspection.',
+  'rollback-flow':
+    'Operationally, retries are expected. The idempotency layer and execution wrapper are what keep a flaky network from becoming a duplicate settlement event.',
+  'trust-map':
+    'Operationally, humans remain the final authority. The gateway is the control layer between agent reasoning and any rail that can actually move funds.',
+};
+
 function VisualFrame({ children }: { children: ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-[26px] border border-[#e6d8c2] bg-[linear-gradient(180deg,#fffef8,#f9f2e6)] p-5 shadow-[0_24px_60px_rgba(111,86,44,0.08)]">
+    <div className="overflow-hidden rounded-[26px] border border-[#e0cfb0] bg-[linear-gradient(180deg,#fffef9,#f8f0e2)] p-5 shadow-[0_24px_60px_rgba(111,86,44,0.08)]">
       {children}
     </div>
   );
@@ -63,15 +78,15 @@ function StepCard({
 
   return (
     <div className={`rounded-2xl border p-4 ${toneStyles[tone]}`}>
-      <p className="text-xs font-mono uppercase tracking-[0.2em] opacity-70">{title}</p>
-      <p className="mt-3 text-sm leading-6">{detail}</p>
+      <p className="text-[12px] font-mono uppercase tracking-[0.18em] opacity-80">{title}</p>
+      <p className="mt-3 text-[15px] leading-7 text-current">{detail}</p>
     </div>
   );
 }
 
 function DiagramRail({ label }: { label: string }) {
   return (
-    <div className="flex items-center justify-center gap-2 px-2 py-1 text-[11px] font-mono uppercase tracking-[0.18em] text-[#a27e38]">
+    <div className="flex items-center justify-center gap-2 px-2 py-1 text-[12px] font-mono uppercase tracking-[0.18em] text-[#7c5a1b]">
       <div className="h-px flex-1 bg-[#e4cc98]" />
       <span>{label}</span>
       <div className="h-px flex-1 bg-[#e4cc98]" />
@@ -152,19 +167,19 @@ function DocsVisualBlock({ visual }: { visual: DocsVisual }) {
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             <div className="rounded-2xl border border-[#eadfcf] bg-white p-4">
-              <p className="text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">Summary</p>
-              <p className="mt-3 text-2xl font-semibold text-slate-900">$8.4M</p>
-              <p className="mt-1 text-sm text-slate-500">30-day notional volume</p>
+              <p className="reading-label">Input tree</p>
+              <p className="mt-3 text-lg font-semibold text-slate-900">dashboard_live/summary</p>
+              <p className="mt-2 text-base leading-7 text-[#333333]">Aggregated live metrics published from real gateway state.</p>
             </div>
             <div className="rounded-2xl border border-[#eadfcf] bg-white p-4">
-              <p className="text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">Pending</p>
-              <p className="mt-3 text-2xl font-semibold text-slate-900">14</p>
-              <p className="mt-1 text-sm text-slate-500">signature reviews in queue</p>
+              <p className="reading-label">Input tree</p>
+              <p className="mt-3 text-lg font-semibold text-slate-900">dashboard_live/transactions</p>
+              <p className="mt-2 text-base leading-7 text-[#333333]">Approval and execution records consumed by review surfaces.</p>
             </div>
             <div className="rounded-2xl border border-[#eadfcf] bg-white p-4">
-              <p className="text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">Latency</p>
-              <p className="mt-3 text-2xl font-semibold text-slate-900">Live</p>
-              <p className="mt-1 text-sm text-slate-500">subscribed without page reload</p>
+              <p className="reading-label">Input tree</p>
+              <p className="mt-3 text-lg font-semibold text-slate-900">gas_live/base</p>
+              <p className="mt-2 text-base leading-7 text-[#333333]">Chain-specific gas data rendered without page reload.</p>
             </div>
           </div>
         </VisualFrame>
@@ -191,8 +206,8 @@ function DocsVisualBlock({ visual }: { visual: DocsVisual }) {
               <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full border border-[#dcb768] bg-[#fff8e5] text-[#a1711f] shadow-[0_0_0_10px_rgba(255,240,209,0.9)]">
                 <ShieldCheck className="h-10 w-10" />
               </div>
-              <p className="mt-4 text-sm font-mono uppercase tracking-[0.22em] text-[#9a8357]">UTG</p>
-              <p className="mt-2 text-sm leading-6 text-slate-600">Policy, approval, audit, and execution controls converge here.</p>
+              <p className="mt-4 text-sm font-mono uppercase tracking-[0.22em] text-[#7c5a1b]">UTG</p>
+              <p className="mt-2 text-base leading-7 text-[#333333]">Policy, approval, audit, and execution controls converge here.</p>
             </div>
             <StepCard title="Settlement rails" detail="EVM and external transaction paths only activate after the gateway says yes." tone="emerald" />
           </div>
@@ -224,14 +239,14 @@ function DocsCodeBlock({
     <div className="light-code overflow-hidden">
       <div className="flex items-center justify-between border-b border-[#eadfcf] px-4 py-3">
         <div>
-          <p className="text-xs font-mono uppercase tracking-[0.2em] text-[#9a8357]">{label}</p>
-          <p className="mt-1 text-xs text-slate-400">{language}</p>
+          <p className="reading-label">{label}</p>
+          <p className="mt-1 text-xs text-[#555555]">{language}</p>
         </div>
         <button type="button" onClick={handleCopy} className="light-button-secondary px-3 py-2 text-xs font-mono">
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
-      <pre className="overflow-x-auto px-4 py-4 text-sm leading-7 text-slate-700">
+      <pre className="overflow-x-auto px-4 py-4 text-[15px] leading-8 text-[#252525]">
         <code>{content}</code>
       </pre>
     </div>
@@ -247,18 +262,18 @@ function Pager({ currentPage }: { currentPage: DocsPage }) {
     <div className="mt-10 grid gap-4 md:grid-cols-2">
       {previous ? (
         <Link to={`/docs/${previous.slug}`} className="light-card p-5">
-          <p className="text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">Previous</p>
+          <p className="reading-label">Previous</p>
           <p className="mt-3 text-lg font-semibold text-slate-900">{previous.label}</p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">{previous.summary}</p>
+          <p className="mt-2 text-base leading-7 text-[#333333]">{previous.summary}</p>
         </Link>
       ) : (
         <div />
       )}
       {next ? (
         <Link to={`/docs/${next.slug}`} className="light-card p-5 text-left md:text-right">
-          <p className="text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">Next</p>
+          <p className="reading-label">Next</p>
           <p className="mt-3 text-lg font-semibold text-slate-900">{next.label}</p>
-          <p className="mt-2 text-sm leading-6 text-slate-500">{next.summary}</p>
+          <p className="mt-2 text-base leading-7 text-[#333333]">{next.summary}</p>
         </Link>
       ) : (
         <div />
@@ -273,6 +288,9 @@ export default function DocsExperience({ onStart }: DocsExperienceProps) {
   const page = docsPageMap[pageSlug || defaultDocsPage.slug] || defaultDocsPage;
   const [query, setQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const activeGroup = page.group;
+  const activeGroupEntry = docsGroups.find((group) => group.group === activeGroup) || docsGroups[0];
+  const activeGroupPages = activeGroupEntry.pages;
 
   useEffect(() => {
     if (!location.hash) {
@@ -315,17 +333,17 @@ export default function DocsExperience({ onStart }: DocsExperienceProps) {
     <div className="landing-shell min-h-screen font-sans">
       <div className="mx-auto max-w-[1660px] px-4 py-4 md:px-6 md:py-5">
         <header className="light-nav sticky top-4 z-40 mb-6 flex flex-col gap-4 px-5 py-4 md:px-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-center gap-3">
-            <img src="/logo.png" alt="Aima Logo" className="h-10 w-10 rounded-full border border-[#eadfcf] bg-white/80 p-1.5 object-contain" />
-            <div>
-              <Link to="/" className="block text-lg font-semibold text-slate-900">
-                Aima Protocol Docs
-              </Link>
-              <p className="text-[11px] font-mono uppercase tracking-[0.24em] text-[#9a8357]">
-                Universal Transaction Gateway
-              </p>
+            <div className="flex items-center gap-3">
+              <img src="/logo.png" alt="Aima Logo" className="h-10 w-10 rounded-full border border-[#eadfcf] bg-white/80 p-1.5 object-contain" />
+              <div>
+                <Link to="/" className="block text-lg font-semibold text-slate-900">
+                  Aima Protocol Docs
+                </Link>
+                <p className="text-[12px] font-mono uppercase tracking-[0.22em] text-[#6f4e17]">
+                  Universal Transaction Gateway
+                </p>
+              </div>
             </div>
-          </div>
 
           <div className="relative w-full max-w-2xl">
             <div className="flex items-center gap-3 rounded-2xl border border-[#eadfcf] bg-white/85 px-4 py-3 shadow-[0_18px_46px_rgba(111,86,44,0.06)]">
@@ -336,7 +354,7 @@ export default function DocsExperience({ onStart }: DocsExperienceProps) {
                 onFocus={() => setShowResults(true)}
                 onBlur={() => window.setTimeout(() => setShowResults(false), 120)}
                 placeholder="Search architecture, approvals, realtime analytics"
-                className="w-full bg-transparent text-sm text-slate-700 placeholder:text-slate-400"
+                className="w-full bg-transparent text-[15px] text-[#202020] placeholder:text-[#666666]"
               />
             </div>
 
@@ -350,7 +368,7 @@ export default function DocsExperience({ onStart }: DocsExperienceProps) {
                   >
                     <div>
                       <p className="text-sm font-semibold text-slate-900">{result.title}</p>
-                      <p className="mt-1 text-xs font-mono uppercase tracking-[0.18em] text-[#9a8357]">
+                      <p className="mt-1 text-[12px] font-mono uppercase tracking-[0.18em] text-[#6f4e17]">
                         {result.page.label}
                       </p>
                     </div>
@@ -371,37 +389,61 @@ export default function DocsExperience({ onStart }: DocsExperienceProps) {
           </div>
         </header>
 
-        <div className="grid gap-6 xl:grid-cols-[280px_minmax(0,1fr)_240px]">
+        <div className="mb-5 flex flex-wrap gap-3">
+          {docsGroups.map((group) => {
+            const groupHref = group.pages[0]?.slug === defaultDocsPage.slug ? '/docs' : `/docs/${group.pages[0]?.slug}`;
+            const isActive = group.group === activeGroup;
+
+            return (
+              <NavLink
+                key={group.group}
+                to={groupHref}
+                className={`rounded-2xl border px-4 py-3 text-sm font-semibold transition ${
+                  isActive
+                    ? 'border-[#d4b06d] bg-[#fff1cf] text-[#161616] shadow-[0_14px_30px_rgba(111,86,44,0.08)]'
+                    : 'border-[#e2d2b8] bg-white/72 text-[#333333] hover:border-[#d4b06d] hover:bg-white'
+                }`}
+              >
+                <span className="block">{group.group}</span>
+              </NavLink>
+            );
+          })}
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[290px_minmax(0,1fr)_240px]">
           <aside className="light-panel h-fit p-5">
             <div className="mb-5 flex items-center gap-2 text-[#a27e38]">
               <BookOpen className="h-4 w-4" />
               <p className="text-xs font-mono uppercase tracking-[0.22em]">Documentation</p>
             </div>
 
-            <div className="space-y-6">
-              {docsGroups.map((group) => (
-                <div key={group.group}>
-                  <p className="mb-3 text-[11px] font-mono uppercase tracking-[0.22em] text-slate-400">{group.group}</p>
-                  <div className="space-y-1.5">
-                    {group.pages.map((groupPage) => (
-                      <NavLink
-                        key={groupPage.slug}
-                        to={groupPage.slug === defaultDocsPage.slug ? '/docs' : `/docs/${groupPage.slug}`}
-                        end={groupPage.slug === defaultDocsPage.slug}
-                        className={({ isActive }) =>
-                          `block rounded-2xl px-4 py-3 text-sm transition ${
-                            isActive
-                              ? 'border border-[#e1c27b] bg-[#fff4da] font-semibold text-slate-900 shadow-[0_16px_40px_rgba(111,86,44,0.08)]'
-                              : 'border border-transparent text-slate-500 hover:border-[#eadfcf] hover:bg-white/70 hover:text-slate-800'
-                          }`
-                        }
-                      >
-                        <span className="block">{groupPage.label}</span>
-                        <span className="mt-1 block text-xs text-slate-400">{groupPage.title}</span>
-                      </NavLink>
-                    ))}
-                  </div>
-                </div>
+            <div className="space-y-3">
+              <div>
+                <p className="mb-3 text-[12px] font-mono uppercase tracking-[0.22em] text-[#6f4e17]">{activeGroup}</p>
+                <p className="mb-4 text-sm leading-7 text-[#444444]">
+                  Browse this section with the left menu, or search across every docs page from the bar above.
+                </p>
+              </div>
+              {activeGroupPages.map((groupPage) => (
+                <NavLink
+                  key={groupPage.slug}
+                  to={groupPage.slug === defaultDocsPage.slug ? '/docs' : `/docs/${groupPage.slug}`}
+                  end={groupPage.slug === defaultDocsPage.slug}
+                  className={({ isActive }) =>
+                    `block rounded-2xl px-4 py-3 transition ${
+                      isActive
+                        ? 'border border-[#e1c27b] bg-[#fff4da] shadow-[0_16px_40px_rgba(111,86,44,0.08)]'
+                        : 'border border-transparent bg-transparent hover:border-[#eadfcf] hover:bg-white/70'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <span className={`block text-[15px] font-semibold ${isActive ? 'text-[#171717]' : 'text-[#2b2b2b]'}`}>{groupPage.label}</span>
+                      <span className={`mt-1 block text-sm leading-6 ${isActive ? 'text-[#444444]' : 'text-[#555555]'}`}>{groupPage.title}</span>
+                    </>
+                  )}
+                </NavLink>
               ))}
             </div>
 
@@ -429,30 +471,30 @@ export default function DocsExperience({ onStart }: DocsExperienceProps) {
                   <h1 className="max-w-4xl text-4xl font-semibold leading-tight text-slate-900 md:text-5xl">
                     {page.title}
                   </h1>
-                  <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">{page.summary}</p>
+                  <p className="mt-5 max-w-3xl text-xl leading-9 text-[#242424]">{page.summary}</p>
                 </div>
 
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1">
                   <div className="rounded-2xl border border-[#eadfcf] bg-white/80 p-4">
                     <div className="flex items-center gap-2 text-[#a27e38]">
                       <ShieldCheck className="h-4 w-4" />
-                      <span className="text-xs font-mono uppercase tracking-[0.18em]">Protocol note</span>
+                      <span className="text-[12px] font-mono uppercase tracking-[0.18em]">Protocol note</span>
                     </div>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">{page.hero}</p>
+                    <p className="mt-3 text-base leading-8 text-[#333333]">{page.hero}</p>
                   </div>
                   <div className="rounded-2xl border border-[#eadfcf] bg-[#fff8e9] p-4">
-                    <div className="grid gap-3 text-sm text-slate-700">
+                    <div className="grid gap-3 text-[15px] text-[#242424]">
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-2"><Bot className="h-4 w-4 text-[#b78b32]" /> Agents</span>
-                        <span className="font-mono text-xs text-[#9a8357]">Intent</span>
+                        <span className="font-mono text-xs text-[#7c5a1b]">Intent</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-2"><Fingerprint className="h-4 w-4 text-[#b78b32]" /> Identity</span>
-                        <span className="font-mono text-xs text-[#9a8357]">Verified</span>
+                        <span className="font-mono text-xs text-[#7c5a1b]">Verified</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="flex items-center gap-2"><Database className="h-4 w-4 text-[#b78b32]" /> Audit</span>
-                        <span className="font-mono text-xs text-[#9a8357]">Traceable</span>
+                        <span className="font-mono text-xs text-[#7c5a1b]">Traceable</span>
                       </div>
                     </div>
                   </div>
@@ -477,7 +519,7 @@ export default function DocsExperience({ onStart }: DocsExperienceProps) {
                     <h2 className="mt-4 text-3xl font-semibold text-slate-900">{section.title}</h2>
                     <div className="mt-5 space-y-4">
                       {section.body.map((paragraph) => (
-                        <p key={paragraph} className="max-w-4xl text-base leading-8 text-slate-600">
+                        <p key={paragraph} className="max-w-4xl text-[17px] leading-8 text-[#242424] md:text-[18px]">
                           {paragraph}
                         </p>
                       ))}
@@ -486,7 +528,7 @@ export default function DocsExperience({ onStart }: DocsExperienceProps) {
                     {section.bullets && (
                       <div className="mt-6 grid gap-3 md:grid-cols-2">
                         {section.bullets.map((bullet) => (
-                          <div key={bullet} className="rounded-2xl border border-[#eadfcf] bg-white/80 px-4 py-3 text-sm text-slate-600">
+                          <div key={bullet} className="rounded-2xl border border-[#eadfcf] bg-white/80 px-4 py-3 text-[15px] text-[#303030]">
                             <div className="flex items-start gap-3">
                               <span className="mt-1 h-2 w-2 rounded-full bg-[#cfa95d]" />
                               <span>{bullet}</span>
@@ -499,11 +541,20 @@ export default function DocsExperience({ onStart }: DocsExperienceProps) {
                     {section.callout && (
                       <div className={`mt-6 rounded-3xl border px-5 py-5 ${calloutStyles[section.callout.tone]}`}>
                         <p className="text-xs font-mono uppercase tracking-[0.2em]">{section.callout.title}</p>
-                        <p className="mt-3 text-sm leading-7">{section.callout.body}</p>
+                        <p className="mt-3 text-base leading-8">{section.callout.body}</p>
                       </div>
                     )}
 
-                    {section.visual && <div className="mt-6"><DocsVisualBlock visual={section.visual} /></div>}
+                    {section.visual && (
+                      <div className="mt-6">
+                        <DocsVisualBlock visual={section.visual} />
+                        {visualNotes[section.visual] && (
+                          <p className="mt-4 max-w-4xl text-base leading-8 text-[#3a3a3a]">
+                            {visualNotes[section.visual]}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     {section.code && <div className="mt-6"><DocsCodeBlock {...section.code} /></div>}
                   </section>
                 ))}
@@ -514,13 +565,13 @@ export default function DocsExperience({ onStart }: DocsExperienceProps) {
           </main>
 
           <aside className="light-panel hidden h-fit p-5 xl:block">
-            <p className="mb-4 text-xs font-mono uppercase tracking-[0.22em] text-[#9a8357]">On this page</p>
+            <p className="mb-4 text-[12px] font-mono uppercase tracking-[0.22em] text-[#6f4e17]">On this page</p>
             <div className="space-y-2">
               {page.sections.map((section) => (
                 <a
                   key={section.id}
                   href={`#${section.id}`}
-                  className="block rounded-2xl px-3 py-2 text-sm text-slate-500 transition hover:bg-white/75 hover:text-slate-900"
+                  className="block rounded-2xl px-3 py-2 text-sm text-[#444444] transition hover:bg-white/75 hover:text-black"
                 >
                   {section.title}
                 </a>

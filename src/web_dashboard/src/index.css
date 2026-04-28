@@ -18,12 +18,13 @@
   }
 
   body {
-    @apply bg-[#f7f1e3] text-slate-900 antialiased font-sans;
+    @apply bg-[#f7f1e3] text-[#111111] antialiased font-sans;
     background-image:
       radial-gradient(circle at top left, rgba(207, 169, 93, 0.18), transparent 24%),
       radial-gradient(circle at 82% 10%, rgba(245, 158, 11, 0.12), transparent 18%),
       linear-gradient(180deg, #f8f3e9 0%, #f4ecdf 100%);
     min-height: 100vh;
+    line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -130,13 +131,13 @@
 
   .light-panel {
     @apply rounded-[28px] border border-[#e8dcc6] backdrop-blur-xl;
-    background: rgba(255, 252, 247, 0.82);
+    background: rgba(255, 252, 247, 0.88);
     box-shadow: 0 30px 80px rgba(94, 62, 12, 0.08);
   }
 
   .light-card {
     @apply rounded-3xl border border-[#eadfcf] transition duration-200 hover:-translate-y-0.5;
-    background: rgba(255, 255, 255, 0.86);
+    background: rgba(255, 255, 255, 0.92);
     box-shadow: 0 20px 56px rgba(118, 86, 33, 0.08);
   }
 
@@ -150,7 +151,7 @@
   }
 
   .light-eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full border border-[#e3d2b7] bg-white/80 px-4 py-2 text-[11px] font-mono uppercase tracking-[0.24em] text-[#8a6a2f];
+    @apply inline-flex items-center gap-2 rounded-full border border-[#dcc8aa] bg-white/90 px-4 py-2 text-[12px] font-mono uppercase tracking-[0.22em] text-[#6f4e17];
   }
 
   .light-button-primary {
@@ -164,7 +165,7 @@
   }
 
   .light-button-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#e5d7bf] px-5 py-3 font-medium text-slate-700 transition duration-200 hover:-translate-y-0.5 hover:border-[#d8be8c];
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-[#ddccb1] px-5 py-3 font-medium text-[#1f1f1f] transition duration-200 hover:-translate-y-0.5 hover:border-[#d8be8c];
     background: rgba(255, 255, 255, 0.72);
   }
 
@@ -173,11 +174,23 @@
   }
 
   .light-input {
-    @apply w-full rounded-2xl border border-[#e7d8c2] px-4 py-3 text-slate-900 placeholder:text-slate-400 shadow-[0_10px_24px_rgba(111,86,44,0.05)] focus:border-[#d8b15f] focus:ring-2 focus:ring-[#e9c98155];
+    @apply w-full rounded-2xl border border-[#dfccb0] px-4 py-3 text-[#111111] placeholder:text-slate-500 shadow-[0_10px_24px_rgba(111,86,44,0.05)] focus:border-[#d8b15f] focus:ring-2 focus:ring-[#e9c98155];
     background: rgba(255, 255, 255, 0.92);
   }
 
   .light-divider {
     @apply border-t border-[#eadfcf];
+  }
+
+  .reading-body {
+    @apply text-[17px] leading-8 text-[#202020] md:text-[18px];
+  }
+
+  .reading-muted {
+    @apply text-[15px] leading-7 text-[#444444] md:text-base;
+  }
+
+  .reading-label {
+    @apply text-[12px] font-mono uppercase tracking-[0.18em] text-[#6f4e17];
   }
 }
