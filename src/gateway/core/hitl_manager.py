@@ -59,9 +59,17 @@ class HITLManager:
             conn.commit()
 
     def request_signature(self, url: str, amount: float, details: str, required_signatures: List[str] = None) -> str:
+        from core.anomaly_detector import AnomalyDetector
+        ad = AnomalyDetector() # The detector uses the main audit db
+        is_anomaly = ad.evaluate_transaction(amount)
+
         transaction_id = str(uuid.uuid4())[:8]
         if not required_signatures:
             required_signatures = ["Alvins_Share"] # Default to the owner's share
+            
+        if is_anomaly and "Security_Admin_Share" not in required_signatures:
+            print("[HITL] Anomaly detected! Elevating signature requirements to include Security_Admin_Share.", file=sys.stderr)
+            required_signatures.append("Security_Admin_Share")
         
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(

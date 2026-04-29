@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, Shield, Sparkles } from 'lucide-react';
+import { ArrowRight, Shield, Sparkles, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import welcomeVisual from '../assets/welcome-visual.svg';
 
 interface HeroProps {
   onOpenAuth: () => void;
@@ -14,6 +13,7 @@ const slides = [
     detail:
       'UTG is an open-source control layer between agent intent and value movement. Operators keep the approval boundary in their own environment while agents still get a clean execution surface.',
     metrics: ['MCP-first integration', 'Self-hosted operator control', 'Non-custodial by design'],
+    video: '/assets/videos/network_routing.webp'
   },
   {
     label: 'Stable execution',
@@ -21,6 +21,7 @@ const slides = [
     detail:
       'The stable path is deliberately narrow: Base and Ethereum execution, enforced approvals, dashboard telemetry, and retry-safe settlement logic that real operators can trust.',
     metrics: ['Base + Ethereum', 'HITL always enforced', 'Receipt-ready execution trail'],
+    video: '/assets/videos/hitl_approval.webp'
   },
   {
     label: 'Truthful support tiers',
@@ -28,6 +29,7 @@ const slides = [
     detail:
       'UTG now tells the truth about what is stable, what needs a browser or provider adapter, and what should stay off until the runtime is fully provisioned.',
     metrics: ['Stable, beta, experimental', 'Provider-gated handover', 'No fake marketplace data'],
+    video: '/assets/videos/commerce_search.webp'
   },
 ];
 
@@ -37,7 +39,7 @@ export default function Hero({ onOpenAuth }: HeroProps) {
   useEffect(() => {
     const timer = window.setInterval(() => {
       setActiveSlide((current) => (current + 1) % slides.length);
-    }, 3600);
+    }, 6000); // Increased duration to allow video to play
 
     return () => window.clearInterval(timer);
   }, []);
@@ -80,38 +82,63 @@ export default function Hero({ onOpenAuth }: HeroProps) {
           </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            <div className="light-card p-5">
-              <p className="reading-label">Approvals</p>
-              <p className="mt-4 text-3xl font-semibold text-slate-900">HITL</p>
+            <div className="light-card p-5 group">
+              <p className="reading-label transition-colors group-hover:text-[#b68b38]">Approvals</p>
+              <p className="mt-4 text-3xl font-semibold text-slate-900 transition-transform group-hover:scale-105 origin-left">HITL</p>
               <p className="mt-2 text-base leading-7 text-[#333333]">Threshold-driven signature enforcement and auditable interrupts.</p>
             </div>
-            <div className="light-card p-5">
-              <p className="reading-label">Security</p>
-              <p className="mt-4 text-3xl font-semibold text-slate-900">Guardrails</p>
+            <div className="light-card p-5 group">
+              <p className="reading-label transition-colors group-hover:text-[#b68b38]">Security</p>
+              <p className="mt-4 text-3xl font-semibold text-slate-900 transition-transform group-hover:scale-105 origin-left">Guardrails</p>
               <p className="mt-2 text-base leading-7 text-[#333333]">Deterministic replay protection, policy validation, and domain controls.</p>
             </div>
-            <div className="light-card p-5">
-              <p className="reading-label">Support</p>
-              <p className="mt-4 text-3xl font-semibold text-slate-900">Tiered</p>
+            <div className="light-card p-5 group">
+              <p className="reading-label transition-colors group-hover:text-[#b68b38]">Support</p>
+              <p className="mt-4 text-3xl font-semibold text-slate-900 transition-transform group-hover:scale-105 origin-left">Tiered</p>
               <p className="mt-2 text-base leading-7 text-[#333333]">Stable Base and Ethereum flows, beta commerce adapters, and explicit experimental rails.</p>
             </div>
           </div>
         </div>
 
-        <div className="light-panel relative overflow-hidden p-4 md:p-5">
+        <div className="light-panel relative overflow-hidden p-4 md:p-5 transition-all hover:shadow-[0_40px_100px_rgba(94,62,12,0.12)]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(207,169,93,0.18),transparent_34%),linear-gradient(180deg,rgba(255,255,255,0.75),rgba(255,250,240,0.3))]" />
           <div className="relative rounded-[28px] border border-[#eadfcf] bg-[#fffaf1] p-5">
             <div className="grid gap-5 lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="overflow-hidden rounded-[24px] border border-[#efe2cc] bg-white shadow-[0_28px_70px_rgba(110,82,28,0.12)]">
-                <img
-                  src={welcomeVisual}
-                  alt="Aima Protocol network illustration"
-                  className="h-full w-full object-cover"
-                />
+              <div className="flex flex-col gap-5 overflow-hidden">
+                <div className="relative overflow-hidden rounded-[24px] border border-[#efe2cc] bg-white shadow-[0_28px_70px_rgba(110,82,28,0.12)] aspect-[4/3] group">
+                  <img
+                    src={currentSlide.video}
+                    alt="UTG Visualization"
+                    className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="h-12 w-12 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/40">
+                      <Play className="h-5 w-5 text-white ml-1" />
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="rounded-2xl border border-[#eadfcf] bg-white/92 p-4">
+                  <p className="reading-label">Preview payload</p>
+                  <div className="mt-3 grid gap-2 text-[15px] text-[#232323]">
+                    <div className="flex items-center justify-between">
+                      <span>Primary path</span>
+                      <span className="font-mono text-[#8c6319]">MCP integration</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Payments rail</span>
+                      <span className="font-mono text-[#8c6319]">Base + x402</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span>Execution scope</span>
+                      <span className="font-mono text-[#8c6319]">Base + Ethereum</span>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <div className="flex flex-col gap-4">
-                <div className="rounded-[26px] border border-[#eadfcf] bg-white/92 p-5">
+                <div className="rounded-[26px] border border-[#eadfcf] bg-white/92 p-5 transition-colors hover:border-[#cfa95d] hover:bg-white">
                   <div className="mb-3 flex items-center justify-between">
                     <div className="light-eyebrow">
                       <Sparkles className="h-4 w-4 text-[#b3842f]" />
@@ -149,25 +176,6 @@ export default function Hero({ onOpenAuth }: HeroProps) {
                       </div>
                     </div>
                   ))}
-                </div>
-
-                <div className="rounded-2xl border border-[#eadfcf] bg-white/92 p-4">
-                  <p className="reading-label">Preview payload</p>
-                  <div className="mt-3 grid gap-2 text-[15px] text-[#232323]">
-                    <div className="flex items-center justify-between">
-                      <span>Primary path</span>
-                      <span className="font-mono text-[#8c6319]">MCP integration</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Payments rail</span>
-                      <span className="font-mono text-[#8c6319]">Base + x402</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Execution scope</span>
-                      <span className="font-mono text-[#8c6319]">Base + Ethereum</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
