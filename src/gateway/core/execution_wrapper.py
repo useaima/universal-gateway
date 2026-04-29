@@ -7,6 +7,7 @@ from core.audit_logger import AuditLogger
 from core.identity_manager import IdentityManager
 from core.idempotency_manager import IdempotencyManager
 from core.security_cleaner import SecurityCleaner
+from core.browser_manager import BrowserManager
 
 class PriceMismatchException(Exception):
     pass
@@ -87,6 +88,10 @@ class ExecutionWrapper:
             # 8. SECURE CLEANUP (Ephemerality Guard)
             if transaction_id:
                 self.cleaner.wipe_transaction_data(transaction_id)
+            
+            # Wipe browser session context for ephemerality
+            bm = BrowserManager()
+            await bm.clear_context()
 
     def _check_clock_drift(self):
         """Ensures the local clock is not drifted (Edge Case for security)."""

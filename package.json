@@ -1,5 +1,9 @@
 {
   "dependencies": {
-    "@browserbasehq/sdk": "^2.10.0"
+    "@browserbasehq/sdk": "^2.10.0",
+    "@coinbase/onchainkit": "^1.1.2",
+    "@langchain/core": "^1.1.41",
+    "deepagents": "^1.8.8",
+    "langchain": "^0.0.7"
   }
 }

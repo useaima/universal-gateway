@@ -27,3 +27,4 @@ server_data/
 
 # Testing
 .pytest_cache/
+node_modules
