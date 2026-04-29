@@ -7,6 +7,59 @@ export type DocsVisual =
   | 'rollback-flow'
   | 'trust-map';
 
+export const mermaidDefs: Record<DocsVisual, string> = {
+  architecture: `
+flowchart LR
+    A[Agent Client] -->|Intent| G{Policy Gateway}
+    G -->|Approved| S[Settlement Rail]
+    G -->|Halted| H[HITL Dashboard]
+    H -->|Approve| S
+    H -->|Reject| X[Discard]
+  `,
+  'auth-flow': `
+flowchart TD
+    Start[Login/Register] --> Auth{Firebase Auth}
+    Auth -->|Success| State[Account State Sync]
+    State -->|Incomplete| Onboarding[Onboarding Setup]
+    State -->|Complete| Dashboard[Dashboard]
+    Onboarding --> Dashboard
+  `,
+  'request-flow': `
+flowchart LR
+    Req[Agent Request] --> Eval{Gateway Evaluation}
+    Eval -->|Risky| Pending[Pending Review]
+    Eval -->|Safe| Exec[Execution Wrapper]
+    Pending -.->|Operator Approves| Exec
+    Exec --> Settle[Settlement]
+  `,
+  'safety-sandwich': `
+flowchart TD
+    O[Outer Boundary: Allowlists & Rate limits] --> M[Middle Boundary: HITL & Thresholds]
+    M --> C[Core Boundary: Execution & Idempotency]
+    C --> Final[Value Movement]
+  `,
+  'analytics-pipeline': `
+flowchart LR
+    DB1[(transactions.db)] --> Pub[RTDB Publisher]
+    DB2[(audit_v2.db)] --> Pub
+    Pub --> |Live Sync| Dash[Web Dashboard]
+  `,
+  'rollback-flow': `
+flowchart TD
+    Req[Request] --> Lock[Idempotency Lock]
+    Lock --> Exec[Execution Wrapper]
+    Exec --> Verify{Verify State}
+    Verify -->|Success| Clean[Clean Ephemeral Material]
+    Verify -->|Fail| Recov[Recover & Inspect]
+  `,
+  'trust-map': `
+flowchart LR
+    Op([Human Operator]) -->|Configures| UTG[UTG Gateway]
+    Op -.->|Approves| UTG
+    UTG -->|Settles| Rails[EVM Rails]
+  `
+};
+
 export interface DocsCallout {
   tone: 'note' | 'warning' | 'critical' | 'success';
   title: string;

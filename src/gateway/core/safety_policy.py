@@ -12,8 +12,11 @@ class SafetyPolicy:
         self.max_limit = float(os.environ.get("MAX_TRANSACTION_LIMIT", "50.0"))
 
     def is_domain_allowed(self, url: str) -> bool:
-        """Checks if the target domain is explicitly in the Allowed list."""
+        """Checks if the target domain is explicitly in the Allowed list and enforces HTTPS."""
         parsed = urlparse(url)
+        if parsed.scheme.lower() != 'https':
+            return False
+            
         netloc = parsed.netloc.lower()
         if not netloc:
             return False
@@ -25,16 +28,13 @@ class SafetyPolicy:
         return False
 
     def validate_price(self, text_price: str) -> float:
-        """Parses price and throws an Exception if over limit."""
-        # Find something looking like a float, e.g. "$49.99" -> 49.99
-        match = re.search(r'[\d,]+\.\d{2}', text_price)
-        if not match:
-            # Fallback for plain integers like "$49"
-            match = re.search(r'\d+', text_price)
-            if not match:
-                raise ValueError(f"Could not parse valid price from '{text_price}'")
-        
-        amount = float(match.group(0).replace(',', ''))
+        """Parses price robustly using price-parser and throws an Exception if over limit."""
+        from price_parser import Price
+        price = Price.fromstring(text_price)
+        if price.amount is None:
+            raise ValueError(f"Could not parse valid price from '{text_price}'")
+            
+        amount = float(price.amount)
         if amount > self.max_limit:
             raise ValueError(f"Safety Sandwich Violation: Amount ${amount} exceeds limit of ${self.max_limit}")
         return amount

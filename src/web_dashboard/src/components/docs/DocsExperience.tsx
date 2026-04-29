@@ -20,10 +20,12 @@ import {
   docsGroups,
   docsPageMap,
   docsPages,
+  mermaidDefs,
   type DocsCallout,
   type DocsPage,
   type DocsVisual,
 } from '../../content/docsContent';
+import MermaidRenderer from './MermaidRenderer';
 
 interface DocsExperienceProps {
   onStart: () => void;
@@ -94,7 +96,7 @@ function DiagramRail({ label }: { label: string }) {
   );
 }
 
-function DocsVisualBlock({ visual }: { visual: DocsVisual }) {
+function renderFallback(visual: DocsVisual) {
   switch (visual) {
     case 'architecture':
       return (
@@ -178,7 +180,7 @@ function DocsVisualBlock({ visual }: { visual: DocsVisual }) {
             </div>
             <div className="rounded-2xl border border-[#eadfcf] bg-white p-4">
               <p className="reading-label">Input tree</p>
-              <p className="mt-3 text-lg font-semibold text-slate-900">gas_live/base</p>
+              <p className="mt-3 text-lg font-semibold text-gas_live/base">gas_live/base</p>
               <p className="mt-2 text-base leading-7 text-[#333333]">Chain-specific gas data rendered without page reload.</p>
             </div>
           </div>
@@ -216,6 +218,21 @@ function DocsVisualBlock({ visual }: { visual: DocsVisual }) {
     default:
       return null;
   }
+}
+
+function DocsVisualBlock({ visual }: { visual: DocsVisual }) {
+  const chart = mermaidDefs[visual];
+
+  return (
+    <div className="flex flex-col gap-6">
+      {chart && (
+        <VisualFrame>
+          <MermaidRenderer chart={chart} />
+        </VisualFrame>
+      )}
+      {renderFallback(visual)}
+    </div>
+  );
 }
 
 function DocsCodeBlock({

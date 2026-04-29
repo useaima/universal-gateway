@@ -7,8 +7,12 @@ from browserbase import Browserbase
 
 
 async def human_delay(min_s: float = 0.5, max_s: float = 1.5):
-    """Async sleep for a random duration to mimic human interaction timing."""
-    await asyncio.sleep(random.uniform(min_s, max_s))
+    """Async sleep for a random duration using a Gaussian distribution to mimic human interaction timing."""
+    mu = (min_s + max_s) / 2.0
+    sigma = (max_s - min_s) / 4.0
+    delay = random.gauss(mu, sigma)
+    delay = max(min_s, min(delay, max_s)) # Clamp to bounds
+    await asyncio.sleep(delay)
 
 class BrowserManager:
     """
@@ -58,6 +62,13 @@ class BrowserManager:
         else:
             context = await self.browser.new_context()
             return await context.new_page()
+
+    async def clear_context(self):
+        """Wipes browser states/cookies on demand for Ephemeral Session Security."""
+        if self.browser:
+            for context in self.browser.contexts:
+                await context.clear_cookies()
+                print("[BrowserManager] Cleared context cookies for session ephemerality.", file=sys.stderr)
 
     async def stop(self):
         if self.browser:

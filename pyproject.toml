@@ -14,7 +14,9 @@ dependencies = [
     "fpdf2",
     "browserbase",
     "google-cloud-recaptcha-enterprise",
-    "firebase-admin"
+    "firebase-admin",
+    "scikit-learn",
+    "price-parser"
 ]
 
 [project.scripts]

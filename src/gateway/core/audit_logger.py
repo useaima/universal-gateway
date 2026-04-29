@@ -2,6 +2,7 @@ import json
 import os
 import datetime
 import sqlite3
+import hashlib
 from fpdf import FPDF
 from core.identity_manager import IdentityManager
 from core.firebase_live_publisher import get_live_publisher
@@ -29,21 +30,35 @@ class AuditLogger:
                     action TEXT,
                     payload TEXT,
                     signature TEXT,
-                    status TEXT
+                    status TEXT,
+                    previous_hash TEXT
                 )
             ''')
+            try:
+                conn.execute("ALTER TABLE signed_statements ADD COLUMN previous_hash TEXT DEFAULT 'GENESIS'")
+            except sqlite3.OperationalError:
+                pass # Column already exists
             conn.commit()
 
     def log_signed_entry(self, user_id: str, action: str, data: dict, status: str = "FINAL"):
-        """Logs a cryptographically signed entry to the user's partition."""
+        """Logs a cryptographically signed entry to the user's partition, chained to previous."""
         ts = datetime.datetime.utcnow().isoformat() + "Z"
-        payload_str = json.dumps(data, sort_keys=True)
+        
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT signature FROM signed_statements WHERE user_id = ? ORDER BY id DESC LIMIT 1", (user_id,))
+            row = cursor.fetchone()
+            previous_hash = hashlib.sha256(row[0].encode()).hexdigest() if row else "GENESIS"
+
+        data_to_sign = data.copy()
+        data_to_sign["previous_hash"] = previous_hash
+        payload_str = json.dumps(data_to_sign, sort_keys=True)
         signature = self.identity.sign_data(payload_str)
 
         with sqlite3.connect(self.db_path) as conn:
             conn.execute(
-                "INSERT INTO signed_statements (user_id, timestamp, action, payload, signature, status) VALUES (?, ?, ?, ?, ?, ?)",
-                (user_id, ts, action, payload_str, signature, status)
+                "INSERT INTO signed_statements (user_id, timestamp, action, payload, signature, status, previous_hash) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (user_id, ts, action, payload_str, signature, status, previous_hash)
             )
             conn.commit()
 
