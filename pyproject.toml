@@ -16,7 +16,8 @@ dependencies = [
     "google-cloud-recaptcha-enterprise",
     "firebase-admin",
     "scikit-learn",
-    "price-parser"
+    "price-parser",
+    "websockets"
 ]
 
 [project.scripts]
