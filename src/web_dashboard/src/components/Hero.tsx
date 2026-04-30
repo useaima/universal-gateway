@@ -176,6 +176,7 @@ export default function Hero({ onOpenAuth }: HeroProps) {
                       </div>
                     </div>
                   ))}
+                </div>
               </div>
             </div>
           </div>
