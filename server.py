@@ -9,6 +9,7 @@ from browser_manager import BrowserManager
 from safety_policy import SafetyPolicy
 from hitl_manager import HITLManager
 from audit_logger import AuditLogger
+from relay_server import start_relay_server
 
 import os
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -117,6 +118,9 @@ async def main():
     import sys
     print("Starting Universal Transaction Gateway MCP Server...", file=sys.stderr, flush=True)
     await browser_manager.initialize()
+    
+    # Start the 3D-Secure WebSocket Relay in the background
+    asyncio.create_task(start_relay_server())
     
     async with stdio_server() as (read_stream, write_stream):
         await server.run(
