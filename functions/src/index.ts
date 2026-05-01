@@ -111,7 +111,11 @@ const extractHostFromMessage = (message: string) => {
   return normalizeHost(extractLine(message, "URI"));
 };
 
-const validateNonce = (nonce: string) => {
+type NonceValidationResult =
+  | { ok: true; nonceId: string; expiresAt: number }
+  | { ok: false; error: string };
+
+const validateNonce = (nonce: string): NonceValidationResult => {
   const match = nonce.match(/^([a-f0-9]+)_([0-9]+)_([a-f0-9]+)$/i);
 
   if (!match) {
