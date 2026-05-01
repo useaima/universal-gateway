@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "github-actions"
+
+  - package-ecosystem: "npm"
+    directory: "/src/web_dashboard"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "frontend"
+
+  - package-ecosystem: "npm"
+    directory: "/functions"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "functions"
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
+      - "python"

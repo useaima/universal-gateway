@@ -12,14 +12,21 @@ class handler(BaseHTTPRequestHandler):
         token = data.get('token')
         action = data.get('action')
         
-        project_id = os.environ.get('VITE_FIREBASE_PROJECT_ID')
-        recaptcha_key = '6LeDEsgsAAAAAHglydox2_TQEPUDR0k6ZFm8ILUy'
+        project_id = os.environ.get('GOOGLE_CLOUD_PROJECT_ID') or os.environ.get('FIREBASE_PROJECT_ID')
+        recaptcha_key = os.environ.get('RECAPTCHA_SITE_KEY')
         
         if not token or not action:
             self.send_response(400)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({'error': 'Missing token or action'}).encode())
+            return
+
+        if not project_id or not recaptcha_key:
+            self.send_response(503)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({'error': 'reCAPTCHA Enterprise is not fully configured on the server.'}).encode())
             return
             
         try:
@@ -28,6 +35,7 @@ class handler(BaseHTTPRequestHandler):
             event = recaptchaenterprise_v1.Event()
             event.site_key = recaptcha_key
             event.token = token
+            event.expected_action = action
             
             assessment = recaptchaenterprise_v1.Assessment()
             assessment.event = event

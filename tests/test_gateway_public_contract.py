@@ -71,6 +71,9 @@ async def test_commerce_requires_provider_configuration(monkeypatch: pytest.Monk
 
 def test_setup_validator_uses_support_tiers(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("GATEWAY_PASSCODE", "123456")
+    monkeypatch.setenv("SIWE_NONCE_SECRET", "nonce-secret-for-tests")
+    monkeypatch.setenv("UTG_STORAGE_DIR", "/tmp/utg-validator")
+    monkeypatch.setenv("UTG_IDENTITY_PRIVATE_KEY_PEM", "test-identity")
     monkeypatch.setenv("TREASURY_ADDRESS", "0xabc")
     monkeypatch.setenv("BASE_RPC_URL", "https://mainnet.base.org")
     monkeypatch.setenv("ETHEREUM_RPC_URL", "https://rpc.example.org")

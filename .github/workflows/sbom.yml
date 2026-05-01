@@ -1,0 +1,46 @@
+name: SBOM
+
+on:
+  push:
+    branches:
+      - main
+      - codex-*
+      - codex/*
+  pull_request:
+  schedule:
+    - cron: "11 4 * * 3"
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: Generate SBOMs
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - id: gateway
+            path: .
+          - id: web-dashboard
+            path: src/web_dashboard
+          - id: functions
+            path: functions
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ${{ matrix.path }}
+          output-file: ${{ runner.temp }}/${{ matrix.id }}-sbom.spdx.json
+          format: spdx-json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.id }}-sbom
+          path: ${{ runner.temp }}/${{ matrix.id }}-sbom.spdx.json

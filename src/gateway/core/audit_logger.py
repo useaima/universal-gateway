@@ -7,14 +7,15 @@ from cryptography.fernet import Fernet
 from fpdf import FPDF
 from core.identity_manager import IdentityManager
 from core.firebase_live_publisher import get_live_publisher
+from core.secure_paths import resolve_storage_dir
 
 class AuditLogger:
     """
     The Signed Statement Vault 3.0.
     Handles user-specific partitioning, signed JSON, PDF statements, and GDPR Crypto-Shredding.
     """
-    def __init__(self, log_dir="artifacts/logs/"):
-        self.log_dir = log_dir
+    def __init__(self, log_dir=None):
+        self.log_dir = log_dir or str(resolve_storage_dir())
         os.makedirs(self.log_dir, exist_ok=True)
         self.db_path = os.path.join(self.log_dir, "audit_v2.db")
         self.identity = IdentityManager()

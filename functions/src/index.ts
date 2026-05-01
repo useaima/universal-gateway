@@ -9,13 +9,40 @@ import { base } from "viem/chains";
 
 setGlobalOptions({ maxInstances: 10 });
 
-const nonceSecret =
-  process.env.SIWE_NONCE_SECRET ||
-  process.env.RECAPTCHA_SITE_KEY ||
-  process.env.FIREBASE_PROJECT_ID ||
-  "utg-base-auth";
+const DEFAULT_ALLOWED_CHAIN_IDS = ["8453", "84532"];
 
-const appDomain = process.env.APP_DOMAIN || "";
+const requireNonceSecret = () => {
+  const secret = process.env.SIWE_NONCE_SECRET?.trim();
+  if (!secret) {
+    throw new Error("SIWE_NONCE_SECRET is required.");
+  }
+  return secret;
+};
+
+const normalizeHost = (value: string | undefined) => {
+  if (!value) return "";
+  const raw = value.trim();
+  if (!raw) return "";
+
+  try {
+    return new URL(raw.includes("://") ? raw : `https://${raw}`).host.toLowerCase();
+  } catch {
+    return raw.replace(/^https?:\/\//i, "").replace(/\/.*$/, "").toLowerCase();
+  }
+};
+
+const getExpectedHost = (requestHost?: string) =>
+  normalizeHost(process.env.APP_DOMAIN || process.env.SIWE_ALLOWED_DOMAIN || requestHost || "");
+
+const getAllowedChainIds = () => {
+  const configured = process.env.ALLOWED_SIWE_CHAIN_IDS?.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  return configured?.length ? configured : DEFAULT_ALLOWED_CHAIN_IDS;
+};
+
+const extractLine = (message: string, label: string) =>
+  message.match(new RegExp(`^${label}:\\s*(.+)$`, "im"))?.[1]?.trim() || "";
 
 const baseClient = createPublicClient({
   chain: base,
@@ -36,15 +63,28 @@ const ensureAdmin = () => {
   };
 };
 
-const applyCors = (response: { set: (header: string, value: string) => void }) => {
-  response.set("Access-Control-Allow-Origin", "*");
+const applyCors = (
+  request: { headers: { host?: string; origin?: string } },
+  response: { set: (header: string, value: string) => void },
+) => {
+  const expectedHost = getExpectedHost(request.headers.host);
+  const origin = request.headers.origin || "";
+  const originHost = normalizeHost(origin);
+  const allowedOrigin =
+    expectedHost && originHost === expectedHost
+      ? origin
+      : expectedHost
+        ? `https://${expectedHost}`
+        : "*";
+
+  response.set("Access-Control-Allow-Origin", allowedOrigin);
   response.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
   response.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 };
 
 const buildNonceSignature = (rawNonce: string, expiresAt: number) =>
   crypto
-    .createHmac("sha256", nonceSecret)
+    .createHmac("sha256", requireNonceSecret())
     .update(`${rawNonce}:${expiresAt}`)
     .digest("hex");
 
@@ -59,35 +99,49 @@ const createNoncePayload = () => {
 };
 
 const extractNonceFromMessage = (message: string) =>
-  message.match(/Nonce:\s+([A-Za-z0-9_]+)/)?.[1] || null;
+  extractLine(message, "Nonce") || null;
+
+const extractChainIdFromMessage = (message: string) => extractLine(message, "Chain ID");
+
+const extractHostFromMessage = (message: string) => {
+  const domain = normalizeHost(extractLine(message, "Domain"));
+  if (domain) {
+    return domain;
+  }
+  return normalizeHost(extractLine(message, "URI"));
+};
 
 const validateNonce = (nonce: string) => {
   const match = nonce.match(/^([a-f0-9]+)_([0-9]+)_([a-f0-9]+)$/i);
 
   if (!match) {
-    return false;
+    return { ok: false, error: "Invalid SIWE nonce format." };
   }
 
   const [, rawNonce, expiresAtRaw, signature] = match;
   const expiresAt = Number(expiresAtRaw);
 
   if (!Number.isFinite(expiresAt) || Date.now() > expiresAt) {
-    return false;
+    return { ok: false, error: "Invalid or expired SIWE nonce." };
   }
 
   const expected = buildNonceSignature(rawNonce, expiresAt);
   if (expected.length !== signature.length) {
-    return false;
+    return { ok: false, error: "Invalid SIWE nonce signature." };
   }
 
-  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) {
+    return { ok: false, error: "Invalid SIWE nonce signature." };
+  }
+
+  return { ok: true, nonceId: rawNonce, expiresAt };
 };
 
 const buildWalletUid = (address: string) =>
   `base_${address.toLowerCase().replace(/^0x/, "")}`;
 
-export const authNonce = onRequest((request, response) => {
-  applyCors(response);
+export const authNonce = onRequest(async (request, response) => {
+  applyCors(request, response);
 
   if (request.method === "OPTIONS") {
     response.status(204).send("");
@@ -99,11 +153,24 @@ export const authNonce = onRequest((request, response) => {
     return;
   }
 
-  response.status(200).json(createNoncePayload());
+  try {
+    const admin = ensureAdmin();
+    const payload = createNoncePayload();
+    const [nonceId] = payload.nonce.split("_");
+    await admin.firestore.collection("siwe_nonces").doc(nonceId).set({
+      host: getExpectedHost(request.headers.host),
+      expiresAt: payload.expiresAt,
+      issuedAt: new Date().toISOString(),
+      usedAt: null,
+    });
+    response.status(200).json(payload);
+  } catch (error) {
+    response.status(503).json({ error: error instanceof Error ? error.message : "Unable to issue SIWE nonce." });
+  }
 });
 
 export const authVerify = onRequest(async (request, response) => {
-  applyCors(response);
+  applyCors(request, response);
 
   if (request.method === "OPTIONS") {
     response.status(204).send("");
@@ -123,14 +190,64 @@ export const authVerify = onRequest(async (request, response) => {
   }
 
   const nonce = extractNonceFromMessage(String(message));
-  if (!nonce || !validateNonce(nonce)) {
+  if (!nonce) {
     response.status(400).json({ error: "Invalid or expired SIWE nonce." });
     return;
   }
 
-  const expectedHost = appDomain || request.headers.host || "";
-  if (expectedHost && !String(message).includes(String(expectedHost))) {
+  const nonceValidation = validateNonce(nonce);
+  if (!nonceValidation.ok) {
+    response.status(400).json({ error: nonceValidation.error });
+    return;
+  }
+
+  const messageHost = extractHostFromMessage(String(message));
+  const expectedHost = getExpectedHost(request.headers.host);
+  if (!messageHost || !expectedHost || messageHost !== expectedHost) {
     response.status(400).json({ error: "SIWE domain mismatch." });
+    return;
+  }
+
+  const chainId = extractChainIdFromMessage(String(message));
+  if (!chainId || !getAllowedChainIds().includes(String(chainId))) {
+    response.status(400).json({ error: "Unsupported SIWE chain." });
+    return;
+  }
+
+  let admin;
+  try {
+    admin = ensureAdmin();
+  } catch (error) {
+    response.status(503).json({ error: error instanceof Error ? error.message : "Firebase Admin is unavailable." });
+    return;
+  }
+
+  const nonceRef = admin.firestore.collection("siwe_nonces").doc(nonceValidation.nonceId);
+  try {
+    await admin.firestore.runTransaction(async (transaction) => {
+      const snapshot = await transaction.get(nonceRef);
+      if (!snapshot.exists) {
+        throw new Error("Unknown SIWE nonce.");
+      }
+
+      const data = snapshot.data() || {};
+      if (data.usedAt) {
+        throw new Error("SIWE nonce replay detected.");
+      }
+      if (Number(data.expiresAt || 0) < Date.now()) {
+        throw new Error("SIWE nonce expired before verification.");
+      }
+      if (normalizeHost(String(data.host || "")) !== expectedHost) {
+        throw new Error("SIWE nonce host mismatch.");
+      }
+
+      transaction.update(nonceRef, {
+        usedAt: new Date().toISOString(),
+        usedByHost: expectedHost,
+      });
+    });
+  } catch (error) {
+    response.status(400).json({ error: error instanceof Error ? error.message : "Unable to validate SIWE nonce." });
     return;
   }
 
@@ -145,7 +262,6 @@ export const authVerify = onRequest(async (request, response) => {
     return;
   }
 
-  const admin = ensureAdmin();
   const uid = buildWalletUid(address);
   const baseAppInstalledAt = new Date().toISOString();
   const customToken = await admin.auth.createCustomToken(uid, {
@@ -169,7 +285,7 @@ export const authVerify = onRequest(async (request, response) => {
 
   response.status(200).json({
     address,
-    chainId: "0x2105",
+    chainId: `0x${Number(chainId).toString(16)}`,
     customToken,
     authMode: "base",
     baseAppInstalledAt,
@@ -177,7 +293,7 @@ export const authVerify = onRequest(async (request, response) => {
 });
 
 export const paymentsReconcile = onRequest(async (request, response) => {
-  applyCors(response);
+  applyCors(request, response);
 
   if (request.method === "OPTIONS") {
     response.status(204).send("");

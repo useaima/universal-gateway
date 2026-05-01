@@ -23,8 +23,7 @@ declare global {
   }
 }
 
-const defaultDatabaseUrl = 'https://universal-transaction-gateway-default-rtdb.europe-west1.firebasedatabase.app';
-const defaultRecaptchaSiteKey = '6LeDEsgsAAAAAHglydox2_TQEPUDR0k6ZFm8ILUy';
+let enterpriseRecaptchaLoader: Promise<void> | null = null;
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -33,10 +32,10 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL || defaultDatabaseUrl,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
 };
 
-export const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || defaultRecaptchaSiteKey;
+export const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY || '';
 
 export const app: FirebaseApp = initializeApp(firebaseConfig);
 export const auth: Auth = getAuth(app);
@@ -53,6 +52,25 @@ export const getEmailActionSettings = (): ActionCodeSettings => ({
   handleCodeInApp: true,
 });
 
+const ensureEnterpriseRecaptchaLoaded = async (): Promise<void> => {
+  if (!recaptchaSiteKey || window.grecaptcha?.enterprise) {
+    return;
+  }
+
+  if (!enterpriseRecaptchaLoader) {
+    enterpriseRecaptchaLoader = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `https://www.google.com/recaptcha/enterprise.js?render=${encodeURIComponent(recaptchaSiteKey)}`;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load reCAPTCHA Enterprise script.'));
+      document.head.appendChild(script);
+    });
+  }
+
+  await enterpriseRecaptchaLoader;
+};
+
 export const executeEnterpriseRecaptcha = async (action: string): Promise<string | null> =>
   new Promise((resolve) => {
     if (!recaptchaSiteKey) {
@@ -60,21 +78,28 @@ export const executeEnterpriseRecaptcha = async (action: string): Promise<string
       return;
     }
 
-    const grecaptcha = window.grecaptcha;
-    if (!grecaptcha?.enterprise) {
-      resolve(null);
-      return;
-    }
+    ensureEnterpriseRecaptchaLoaded()
+      .then(() => {
+        const grecaptcha = window.grecaptcha;
+        if (!grecaptcha?.enterprise) {
+          resolve(null);
+          return;
+        }
 
-    grecaptcha.enterprise.ready(async () => {
-      try {
-        const token = await grecaptcha.enterprise?.execute(recaptchaSiteKey, { action });
-        resolve(token ?? null);
-      } catch (error) {
-        console.error('UTG: Enterprise reCAPTCHA execution failed.', error);
+        grecaptcha.enterprise.ready(async () => {
+          try {
+            const token = await grecaptcha.enterprise?.execute(recaptchaSiteKey, { action });
+            resolve(token ?? null);
+          } catch (error) {
+            console.error('UTG: Enterprise reCAPTCHA execution failed.', error);
+            resolve(null);
+          }
+        });
+      })
+      .catch((error) => {
+        console.error('UTG: Unable to load enterprise reCAPTCHA.', error);
         resolve(null);
-      }
-    });
+      });
   });
 
 export const verifyEnterpriseRecaptcha = async (action: string) => {

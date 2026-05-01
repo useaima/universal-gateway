@@ -43,7 +43,7 @@ SUPPORT_MATRIX: Dict[str, Dict[str, List[str] | str]] = {
 }
 
 FEATURE_REQUIREMENTS = {
-    "stable_gateway": ["GATEWAY_PASSCODE", "TREASURY_ADDRESS"],
+    "stable_gateway": ["GATEWAY_PASSCODE", "TREASURY_ADDRESS", "SIWE_NONCE_SECRET", "UTG_STORAGE_DIR"],
     "evm_execution": ["BASE_RPC_URL", "ETHEREUM_RPC_URL"],
     "commerce_search": ["COMMERCE_SEARCH_PROVIDER", "ALLOWED_DOMAINS"],
     "browser_handover": ["BROWSER_HANDOVER_URL"],

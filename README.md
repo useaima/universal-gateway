@@ -76,6 +76,9 @@ At minimum, stable Base/Ethereum usage should end up with:
 
 ```bash
 GATEWAY_PASSCODE=...
+SIWE_NONCE_SECRET=...
+UTG_STORAGE_DIR=/srv/utg/storage
+UTG_IDENTITY_KEY_PATH=/srv/utg/identity/gateway_ed25519.pem
 BASE_PRIVATE_KEY=0x...
 ETHEREUM_PRIVATE_KEY=0x...
 BASE_RPC_URL=https://mainnet.base.org
@@ -92,7 +95,7 @@ python src/gateway/utils/setup_validator.py
 
 This checks the repo against the same support tiers documented in the docs site:
 
-- `stable`: gateway passcode, treasury, Base/Ethereum RPCs
+- `stable`: gateway passcode, SIWE nonce secret, externalized runtime storage, treasury, Base/Ethereum RPCs
 - `beta`: commerce provider plus browser handover adapter
 - `experimental`: M-Pesa provider credentials and callback routing
 
@@ -101,6 +104,9 @@ This checks the repo against the same support tiers documented in the docs site:
 ```bash
 python src/gateway/server.py
 ```
+
+For production, keep `UTG_STORAGE_DIR` and `UTG_IDENTITY_KEY_PATH` outside the git checkout so runtime databases,
+exports, and identity material never land in tracked source paths.
 
 ### 5. Connect an MCP client
 
@@ -160,12 +166,23 @@ Current public tools:
 
 Backward compatibility note: tool names stay stable in v1 so existing OpenClaw or custom-agent configs do not break during internal refactors.
 
+## Security Posture
+
+- `SIWE_NONCE_SECRET` is required for wallet-sign-in nonce issuance and verification
+- SIWE nonces are stored server-side, expire quickly, and are consumed exactly once
+- `GATEWAY_PASSCODE` must be explicitly configured; there is no production fallback passcode
+- `UTG_STORAGE_DIR` should point outside the repository so approval state, audit logs, and exports are never committed
+- `UTG_IDENTITY_KEY_PATH` or `UTG_IDENTITY_PRIVATE_KEY_PEM` should be configured explicitly for the gateway identity
+- Firebase Admin credentials stay server-side; browser bundles only receive public Firebase config
+- GitHub guardrails now include CodeQL, secret scanning, dependency audits, SBOM generation, and README/docs/runtime contract assertions
+
 ## Docs
 
 The canonical docs experience lives at:
 
 - [utg.useaima.com/docs](https://utg.useaima.com/docs)
 - Raw agent contract: [utg.useaima.com/docs/skill.md](https://utg.useaima.com/docs/skill.md)
+- Sanitized flowcharts: [utg.useaima.com/docs/utg_flowcharts.md](https://utg.useaima.com/docs/utg_flowcharts.md)
 
 The docs site covers:
 

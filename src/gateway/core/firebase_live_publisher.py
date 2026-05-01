@@ -6,6 +6,9 @@ import threading
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
+from core.audit_payloads import decode_audit_payload
+from core.secure_paths import resolve_audit_db_path, resolve_storage_dir, resolve_transactions_db_path
+
 try:
     import firebase_admin
     from firebase_admin import credentials, db as firebase_db
@@ -13,8 +16,6 @@ except ImportError:  # pragma: no cover - dependency may not be present in all e
     firebase_admin = None
     credentials = None
     firebase_db = None
-
-DEFAULT_DATABASE_URL = "https://universal-transaction-gateway-default-rtdb.europe-west1.firebasedatabase.app"
 
 _publisher = None
 _publisher_lock = threading.Lock()
@@ -27,10 +28,14 @@ def _utc_now_iso() -> str:
 class FirebaseLivePublisher:
     def __init__(self):
         self.enabled = False
-        self.storage_dir = os.environ.get("UTG_STORAGE_DIR", "artifacts/logs")
-        self.transactions_db_path = os.path.join(self.storage_dir, "transactions.db")
-        self.audit_db_path = os.path.join(self.storage_dir, "audit_v2.db")
-        self.database_url = os.environ.get("FIREBASE_DATABASE_URL") or DEFAULT_DATABASE_URL
+        self.storage_dir = str(resolve_storage_dir())
+        self.transactions_db_path = str(resolve_transactions_db_path())
+        self.audit_db_path = str(resolve_audit_db_path())
+        self.database_url = os.environ.get("FIREBASE_DATABASE_URL", "").strip()
+
+        if not self.database_url:
+            print("[RTDB] FIREBASE_DATABASE_URL is not configured; live dashboard publishing is disabled.", file=sys.stderr)
+            return
 
         if not firebase_admin or not firebase_db:
             print("[RTDB] firebase-admin is unavailable; live dashboard publishing is disabled.", file=sys.stderr)
@@ -161,7 +166,11 @@ class FirebaseLivePublisher:
         }
 
     def _merge_audit_transaction(self, transactions: Dict[str, Dict[str, Any]], row: sqlite3.Row, current: Dict[str, Any]):
-        payload = self._safe_json_load(row["payload"])
+        payload = decode_audit_payload(
+            row["payload"],
+            db_path=self.audit_db_path,
+            user_id=row["user_id"],
+        )
         action = str(row["action"] or "")
         timestamp = str(row["timestamp"] or _utc_now_iso())
 
