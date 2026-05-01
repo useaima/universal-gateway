@@ -6,6 +6,38 @@ import StatusBadge from '../ui/StatusBadge';
 import { rtdb } from '../../lib/firebase';
 import { formatRelativeTime, mapTransactionsRecord, type LiveTransactionRecord, type LiveTransactionStatus } from '../../lib/liveDashboard';
 
+const SENSITIVE_KEY_FRAGMENTS = ['pin', 'passcode', 'signature', 'private', 'secret', 'nonce', 'encryption'];
+
+function sanitizePayload(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(sanitizePayload);
+  }
+
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, nestedValue]) => {
+        const normalized = key.toLowerCase();
+        if (SENSITIVE_KEY_FRAGMENTS.some((fragment) => normalized.includes(fragment))) {
+          return [key, '[REDACTED]'];
+        }
+
+        return [key, sanitizePayload(nestedValue)];
+      }),
+    );
+  }
+
+  return value;
+}
+
+function sanitizePayloadText(payload: string): string {
+  try {
+    const parsed = JSON.parse(payload);
+    return JSON.stringify(sanitizePayload(parsed), null, 2);
+  } catch {
+    return payload.length > 800 ? `${payload.slice(0, 800)}…` : payload;
+  }
+}
+
 export default function TransactionsView() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'All' | LiveTransactionStatus>('All');
@@ -109,10 +141,17 @@ export default function TransactionsView() {
                     const isExpanded = expanded === tx.id;
                     return (
                       <Fragment key={tx.id}>
-                        <tr className="table-row-hover border-t border-defi-border">
+                        <tr className="table-row-hover group border-t border-defi-border transition-colors hover:bg-white/[0.02]">
                           <td className="whitespace-nowrap px-8 py-5 text-sm font-mono text-defi-beige">{tx.id}</td>
                           <td className="px-8 py-5">
-                            <div className="text-sm font-semibold text-gray-100">{tx.agent}</div>
+                            <div className="flex items-center space-x-2">
+                              <div className="text-sm font-semibold text-gray-100">{tx.agent}</div>
+                              {tx.agent !== 'User' ? (
+                                <span className="rounded-md bg-defi-gold/10 px-2 py-0.5 text-[10px] font-mono font-bold text-defi-goldBright border border-defi-gold/20">AGENT</span>
+                              ) : (
+                                <span className="rounded-md bg-white/5 px-2 py-0.5 text-[10px] font-mono font-bold text-defi-muted border border-white/10">USER</span>
+                              )}
+                            </div>
                             <div className="text-xs font-mono text-defi-muted">{tx.network}</div>
                           </td>
                           <td className="whitespace-nowrap px-8 py-5">
@@ -122,7 +161,7 @@ export default function TransactionsView() {
                             </div>
                           </td>
                           <td className="px-8 py-5">
-                            <div className="max-w-xs text-sm text-gray-200" title={tx.reasoning}>{tx.reasoning}</div>
+                            <div className="max-w-xs truncate text-sm text-gray-200" title={tx.reasoning}>{tx.reasoning}</div>
                             <div className="mt-1 text-xs font-mono text-defi-amber/90">Gas Used: {tx.gas}</div>
                           </td>
                           <td className="whitespace-nowrap px-8 py-5">
@@ -134,13 +173,13 @@ export default function TransactionsView() {
                           <td className="px-8 py-5 text-right">
                             <div className="flex items-center justify-end gap-3">
                               {(tx.statusUi === 'Pending Review' || tx.statusUi === 'Blocked') && (
-                                <button onClick={() => setSelected(tx)} className="button-secondary px-3 py-2 text-xs font-mono">
-                                  Review
+                                <button onClick={() => setSelected(tx)} className="button-secondary px-3 py-2 text-xs font-mono bg-defi-gold/10 text-defi-goldBright border-defi-gold/30 hover:bg-defi-gold/20">
+                                  Approve
                                 </button>
                               )}
                               <button
                                 onClick={() => setExpanded(isExpanded ? null : tx.id)}
-                                className="rounded-full border border-defi-border bg-white/5 p-2 text-defi-muted transition hover:border-defi-borderStrong hover:text-white"
+                                className={`rounded-full border border-defi-border bg-white/5 p-2 transition-all ${isExpanded ? 'bg-defi-gold/20 border-defi-gold/40 text-defi-goldBright' : 'text-defi-muted hover:border-defi-borderStrong hover:text-white'}`}
                               >
                                 {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                               </button>
@@ -148,16 +187,27 @@ export default function TransactionsView() {
                           </td>
                         </tr>
                         {isExpanded && (
-                          <tr className="border-t border-defi-border bg-black/20">
-                            <td colSpan={7} className="px-8 py-6">
-                              <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-                                <div className="rounded-2xl border border-defi-border bg-black/20 p-5">
-                                  <p className="text-xs font-mono uppercase tracking-[0.22em] text-defi-muted">Decision timeline</p>
-                                  <ol className="mt-4 space-y-3">
-                                    {(tx.timeline.length > 0 ? tx.timeline : ['Waiting for synced gateway milestones']).map((step) => (
-                                      <li key={step} className="flex items-start gap-3 text-sm text-defi-cream">
-                                        <span className="mt-1 inline-block h-2.5 w-2.5 rounded-full bg-defi-goldBright" />
-                                        {step}
+                          <tr className="border-t border-defi-border bg-[linear-gradient(to_bottom,rgba(0,0,0,0.2),rgba(0,0,0,0.4))]">
+                            <td colSpan={7} className="px-8 py-8">
+                              <div className="grid gap-8 lg:grid-cols-[0.95fr_1.05fr]">
+                                <div className="rounded-2xl border border-defi-border bg-black/20 p-6 shadow-2xl">
+                                  <div className="mb-4 flex items-center justify-between">
+                                    <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-defi-muted">Reasoning Engine Flow</p>
+                                    <span className="flex items-center space-x-1">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-defi-goldBright animate-pulse" />
+                                      <span className="text-[10px] font-mono text-defi-goldBright uppercase">Live Analysis</span>
+                                    </span>
+                                  </div>
+                                  <ol className="mt-4 space-y-4">
+                                    {(tx.timeline.length > 0 ? tx.timeline : ['Initiating gateway request...', 'Analyzing protocol safety limits...', 'Preparing non-custodial payload']).map((step, idx) => (
+                                      <li key={`${step}-${idx}`} className="flex items-start gap-4">
+                                        <div className="flex flex-col items-center">
+                                          <div className="flex h-5 w-5 items-center justify-center rounded-full bg-defi-gold/20 text-[10px] font-bold text-defi-goldBright border border-defi-gold/30">
+                                            {idx + 1}
+                                          </div>
+                                          {idx !== (tx.timeline.length || 3) - 1 && <div className="h-6 w-px bg-defi-gold/20 mt-1" />}
+                                        </div>
+                                        <span className="text-sm text-defi-cream/90 font-medium pt-0.5">{step}</span>
                                       </li>
                                     ))}
                                   </ol>
@@ -171,7 +221,7 @@ export default function TransactionsView() {
                                   <div className="rounded-2xl border border-defi-border bg-[#0d1116] p-5">
                                     <p className="text-xs font-mono uppercase tracking-[0.22em] text-defi-muted">JSON payload</p>
                                     <pre className="mt-3 overflow-x-auto text-xs font-mono leading-6 text-defi-beige">
-                                      <code>{tx.payload}</code>
+                                      <code>{sanitizePayloadText(tx.payload)}</code>
                                     </pre>
                                   </div>
                                 </div>

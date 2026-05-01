@@ -1,39 +1,50 @@
 import os
-import json
 import sqlite3
 import numpy as np
 from sklearn.ensemble import IsolationForest
+
+from core.audit_payloads import decode_audit_payload
+from core.secure_paths import resolve_audit_db_path
 
 class AnomalyDetector:
     """
     Telemetric ML Model for real-time anomaly detection.
     Uses Isolation Forest to detect abnormal transaction velocity and sizes.
     """
-    def __init__(self, db_path="artifacts/logs/audit_v2.db"):
-        self.db_path = db_path
+    def __init__(self, db_path=None):
+        self.db_path = db_path or str(resolve_audit_db_path())
         self.model = IsolationForest(contamination=0.05, random_state=42)
         self.is_trained = False
 
     def train(self):
-        """Trains the Isolation Forest model on historical transaction data."""
+        """Trains the Isolation Forest model on readable historical transaction data."""
         if not os.path.exists(self.db_path):
             return  # No data to train on
 
         try:
             with sqlite3.connect(self.db_path) as conn:
+                conn.row_factory = sqlite3.Row
                 cursor = conn.cursor()
-                cursor.execute("SELECT payload FROM signed_statements WHERE action = 'STATE_PREFLIGHT'")
+                cursor.execute(
+                    "SELECT user_id, payload FROM signed_statements WHERE action = 'STATE_PREFLIGHT'"
+                )
                 rows = cursor.fetchall()
 
             data = []
             for r in rows:
-                payload = json.loads(r[0])
+                payload = decode_audit_payload(
+                    r["payload"],
+                    db_path=self.db_path,
+                    user_id=r["user_id"],
+                )
+                if not isinstance(payload, dict):
+                    continue
                 meta = payload.get("metadata", {})
                 quote = meta.get("initial_quote")
                 if quote is not None:
                     data.append([float(quote)])
 
-            if len(data) > 10: # Minimum sample size
+            if len(data) > 10:  # Minimum sample size
                 X = np.array(data)
                 self.model.fit(X)
                 self.is_trained = True
@@ -50,7 +61,7 @@ class AnomalyDetector:
             self.train()
 
         if not self.is_trained:
-            return False # Default to false if not enough data to train
+            return False  # Fall back to baseline HITL if there is not enough readable history.
 
         X = np.array([[float(amount)]])
         prediction = self.model.predict(X)

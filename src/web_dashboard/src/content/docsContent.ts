@@ -1,62 +1,273 @@
 export type DocsVisual =
-  | 'architecture'
-  | 'auth-flow'
-  | 'request-flow'
+  | 'system-architecture'
+  | 'transaction-lifecycle'
   | 'safety-sandwich'
-  | 'analytics-pipeline'
-  | 'rollback-flow'
-  | 'trust-map';
+  | 'hitl-approval'
+  | 'telemetry-pipeline'
+  | 'commerce-handover';
 
 export const mermaidDefs: Record<DocsVisual, string> = {
-  architecture: `
-flowchart LR
-    A[Agent Client] -->|Intent| G{Policy Gateway}
-    G -->|Approved| S[Settlement Rail]
-    G -->|Halted| H[HITL Dashboard]
-    H -->|Approve| S
-    H -->|Reject| X[Discard]
+  'system-architecture': `
+flowchart TB
+    subgraph Clients["Agent Clients"]
+        OC["OpenClaw"]
+        CD["Claude Desktop"]
+        CA["Custom MCP Agent"]
+        TG["Telegram / Slack"]
+    end
+
+    subgraph Gateway["UTG Gateway Server"]
+        MCP["MCP JSON-RPC Layer"]
+        REG["Tool & Skill Registry"]
+        A2A["A2A Discovery Card"]
+
+        subgraph PolicyLayer["Policy & Control"]
+            SP["SafetyPolicy"]
+            AD["AnomalyDetector ML"]
+            RC["RuntimeContract"]
+        end
+
+        subgraph ApprovalLayer["Approval Layer"]
+            HITL["HITLManager"]
+            SIG["Signature Share DB"]
+            PIN["Passcode Verification"]
+        end
+
+        subgraph ExecutionLayer["Execution Engine"]
+            EW["ExecutionWrapper"]
+            IDEM["IdempotencyManager"]
+            SAND["SandboxEngine"]
+        end
+    end
+
+    subgraph Settlement["Settlement Rails"]
+        BASE["Base L2"]
+        ETH["Ethereum L1"]
+        X402["x402 Payment Challenge"]
+    end
+
+    subgraph Observability["Audit & Telemetry"]
+        AUDIT["AuditLogger + Signed Vault"]
+        SQLITE["SQLite Lifecycle Logs"]
+        RTDB["Firebase RTDB Publisher"]
+        DASH["Live Web Dashboard"]
+    end
+
+    Clients -->|"MCP stdio"| MCP
+    MCP --> REG
+    REG --> PolicyLayer
+    PolicyLayer -->|"Risky"| ApprovalLayer
+    PolicyLayer -->|"Safe"| ExecutionLayer
+    ApprovalLayer -->|"Approved"| ExecutionLayer
+    ExecutionLayer --> Settlement
+    ExecutionLayer --> Observability
+    SQLITE --> RTDB
+    RTDB -->|"Live Sync"| DASH
   `,
-  'auth-flow': `
+  'transaction-lifecycle': `
 flowchart TD
-    Start[Login/Register] --> Auth{Firebase Auth}
-    Auth -->|Success| State[Account State Sync]
-    State -->|Incomplete| Onboarding[Onboarding Setup]
-    State -->|Complete| Dashboard[Dashboard]
-    Onboarding --> Dashboard
-  `,
-  'request-flow': `
-flowchart LR
-    Req[Agent Request] --> Eval{Gateway Evaluation}
-    Eval -->|Risky| Pending[Pending Review]
-    Eval -->|Safe| Exec[Execution Wrapper]
-    Pending -.->|Operator Approves| Exec
-    Exec --> Settle[Settlement]
+    START(["Agent calls tool"]) --> RECV["MCP Server receives request"]
+    RECV --> ROUTE{"Tool Registry routes to skill"}
+
+    ROUTE -->|"DeFi Skill"| DEFI["DeFiEthSkill"]
+    ROUTE -->|"Commerce Skill"| COMM["CommerceSkill"]
+    ROUTE -->|"Handover Skill"| HAND["HandoverSkill"]
+
+    DEFI --> POLICY{"SafetyPolicy check"}
+    POLICY -->|"Domain blocked"| REJECT_D["Return: Domain not allowed"]
+    POLICY -->|"Over limit"| REJECT_L["Return: Safety Sandwich violation"]
+    POLICY -->|"Passes"| HITL_CHECK["HITLManager.request_signature"]
+
+    HITL_CHECK --> ANOMALY{"AnomalyDetector.evaluate"}
+    ANOMALY -->|"Anomaly"| ESCALATE["Elevate: Add Security_Admin_Share"]
+    ANOMALY -->|"Normal"| PENDING["Status: PENDING_SIGNATURES"]
+    ESCALATE --> PENDING
+
+    PENDING --> WAIT(["Agent asks operator for passcode"])
+    WAIT --> SUBMIT["submit_signature_share"]
+    SUBMIT --> CONSENSUS{"All shares collected?"}
+    CONSENSUS -->|"No"| WAIT
+    CONSENSUS -->|"Yes"| SIGNED["Status: FULLY_SIGNED"]
+
+    SIGNED --> EXEC["ExecutionWrapper.execute_task"]
+    EXEC --> CLOCK["Clock drift check"]
+    CLOCK --> IDEM{"IdempotencyManager.check_key"}
+    IDEM -->|"Already processed"| CACHED["Return cached result"]
+    IDEM -->|"New"| LOCK["Lock idempotency key"]
+
+    LOCK --> PREFLIGHT["Log: STATE_PREFLIGHT"]
+    PREFLIGHT --> PRICE{"Price variance check"}
+    PRICE -->|"Mismatch > 5%"| HALT["Status: HALTED"]
+    PRICE -->|"OK"| EXECUTE["Log: STATE_EXECUTE"]
+
+    EXECUTE --> WEB3["Web3 broadcast transaction"]
+    WEB3 --> RECEIPT["Wait for block confirmations"]
+    RECEIPT --> VERIFY["Log: STATE_VERIFY"]
+    VERIFY --> FINALIZE["Finalize idempotency key"]
+    FINALIZE --> AUDIT["AuditLogger.log_signed_entry"]
+    AUDIT --> PUBLISH["Firebase RTDB sync_all"]
+    PUBLISH --> CLEAN["SecurityCleaner.wipe + BrowserManager.clear"]
+    CLEAN --> DONE(["Return: Settlement hash"])
   `,
   'safety-sandwich': `
+flowchart TB
+    INTENT(["Agent Intent Arrives"]) --> OUTER
+
+    subgraph OUTER["Outer Boundary — Request Validation"]
+        HTTPS{"HTTPS enforced?"}
+        DOMAIN{"Domain in allowlist?"}
+        RATE["Rate limiting"]
+        HTTPS -->|"No"| BLOCK1["BLOCKED: Insecure protocol"]
+        HTTPS -->|"Yes"| DOMAIN
+        DOMAIN -->|"No"| BLOCK2["BLOCKED: Unauthorized domain"]
+        DOMAIN -->|"Yes"| RATE
+    end
+
+    RATE --> MIDDLE
+
+    subgraph MIDDLE["Middle Boundary — Human Oversight"]
+        AMOUNT{"Amount > MAX_TRANSACTION_LIMIT?"}
+        ANOMALY_M{"Isolation Forest anomaly?"}
+        HITL_M["HITL approval required"]
+        AMOUNT -->|"Over"| BLOCK3["BLOCKED: Safety Sandwich violation"]
+        AMOUNT -->|"Under"| ANOMALY_M
+        ANOMALY_M -->|"Anomaly"| ESCALATE_M["Escalate: require Security_Admin_Share"]
+        ANOMALY_M -->|"Normal"| HITL_M
+        ESCALATE_M --> HITL_M
+    end
+
+    HITL_M --> CORE
+
+    subgraph CORE["Core Boundary — Execution Integrity"]
+        IDEM_C{"Idempotency collision?"}
+        TIMEOUT{"Timeout > 120s?"}
+        PRICE_C{"Price drift > 5%?"}
+        EXEC_C["Atomic execution with asyncio.wait_for"]
+        IDEM_C -->|"Duplicate"| CACHED_C["Return cached result"]
+        IDEM_C -->|"New"| TIMEOUT
+        TIMEOUT -->|"Expired"| BLOCK4["FAILED: Timeout budget exceeded"]
+        TIMEOUT -->|"OK"| PRICE_C
+        PRICE_C -->|"Mismatch"| BLOCK5["HALTED: Price variance"]
+        PRICE_C -->|"OK"| EXEC_C
+    end
+
+    EXEC_C --> VALUE(["Value Movement on EVM"])
+  `,
+  'hitl-approval': `
 flowchart TD
-    O[Outer Boundary: Allowlists & Rate limits] --> M[Middle Boundary: HITL & Thresholds]
-    M --> C[Core Boundary: Execution & Idempotency]
-    C --> Final[Value Movement]
+    REQ(["Agent calls request_eth_transfer_reliable"]) --> HASH["Generate deterministic tx ID from network + address + amount"]
+    HASH --> LOOKUP{"Transaction exists in pending_transactions?"}
+
+    LOOKUP -->|"No — First call"| CREATE["INSERT new PENDING_SIGNATURES record"]
+    CREATE --> ANOMALY_H{"AnomalyDetector.evaluate_transaction"}
+    ANOMALY_H -->|"Normal"| SIG1["Required: Alvins_Share"]
+    ANOMALY_H -->|"Anomaly detected"| SIG2["Required: Alvins_Share + Security_Admin_Share"]
+    SIG1 --> HALTED
+    SIG2 --> HALTED
+    HALTED(["Return: TRANSACTION HALTED — ask operator for passcode"])
+
+    LOOKUP -->|"Yes — Retry call"| STATUS{"Check current status"}
+    STATUS -->|"PENDING_SIGNATURES"| STILL_PENDING["Return: Still awaiting approval shares"]
+    STATUS -->|"REJECTED"| REJECTED["Return: User rejected transaction"]
+    STATUS -->|"FULLY_SIGNED"| PROCEED
+
+    HALTED -.->|"Operator provides PIN"| SUBMIT_H["Agent calls submit_signature_share"]
+    STILL_PENDING -.->|"Operator provides PIN"| SUBMIT_H
+
+    SUBMIT_H --> VERIFY_PIN{"PIN matches GATEWAY_PASSCODE?"}
+    VERIFY_PIN -->|"No"| DENIED["Return: Access denied"]
+    VERIFY_PIN -->|"Yes"| RECORD["Record signature_share in DB"]
+    RECORD --> CHECK{"All required shares collected?"}
+    CHECK -->|"No"| WAITING["Return: Awaiting remaining shares"]
+    CHECK -->|"Yes"| UPDATE["Update status: FULLY_SIGNED"]
+    UPDATE --> FIREBASE_H["Firebase RTDB sync_all"]
+
+    FIREBASE_H -.->|"Agent retries original tool"| PROCEED
+    PROCEED["ExecutionWrapper resumes with full approval"]
   `,
-  'analytics-pipeline': `
+  'telemetry-pipeline': `
 flowchart LR
-    DB1[(transactions.db)] --> Pub[RTDB Publisher]
-    DB2[(audit_v2.db)] --> Pub
-    Pub --> |Live Sync| Dash[Web Dashboard]
+    subgraph Sources["Data Sources"]
+        TX_DB[("transactions.db")]
+        AUDIT_DB[("audit_v2.db")]
+        IDEM_DB[("idempotency.db")]
+    end
+
+    subgraph Publisher["FirebaseLivePublisher"]
+        QUERY["Query pending_transactions"]
+        QUERY2["Query signed_statements"]
+        BUILD["_build_hitl_transaction"]
+        MERGE["_merge_audit_transaction"]
+        AGG["_build_aggregates"]
+        STATUS_MAP["_status_ui normalization"]
+        NETWORK_MAP["_infer_network detection"]
+    end
+
+    subgraph RTDB["Firebase Realtime Database"]
+        SUMMARY["dashboard_live/summary"]
+        THROUGHPUT["dashboard_live/throughput_30d"]
+        TRANSACTIONS["dashboard_live/transactions"]
+        PORTFOLIO["portfolio_live/summary"]
+        GAS["gas_live/base + ethereum"]
+    end
+
+    subgraph Dashboard["Live Web Dashboard"]
+        OVERVIEW["Overview Panel"]
+        METRICS["30-Day Volume + Settled Count"]
+        TABLE["Transaction Review Table"]
+        TIMELINE["Per-Transaction Timeline"]
+        AGENT_COUNT["Active Agent Counter"]
+    end
+
+    TX_DB --> QUERY
+    AUDIT_DB --> QUERY2
+    QUERY --> BUILD
+    QUERY2 --> MERGE
+    BUILD --> STATUS_MAP
+    MERGE --> STATUS_MAP
+    STATUS_MAP --> AGG
+    NETWORK_MAP --> AGG
+
+    AGG -->|"thirtyDayVolumeUsd"| SUMMARY
+    AGG -->|"Daily buckets"| THROUGHPUT
+    BUILD -->|"Per-tx state"| TRANSACTIONS
+
+    SUMMARY -->|"Subscribe"| OVERVIEW
+    SUMMARY -->|"Subscribe"| METRICS
+    THROUGHPUT -->|"Subscribe"| METRICS
+    TRANSACTIONS -->|"Subscribe"| TABLE
+    TRANSACTIONS -->|"Subscribe"| TIMELINE
+    SUMMARY -->|"activeAgents"| AGENT_COUNT
   `,
-  'rollback-flow': `
+  'commerce-handover': `
 flowchart TD
-    Req[Request] --> Lock[Idempotency Lock]
-    Lock --> Exec[Execution Wrapper]
-    Exec --> Verify{Verify State}
-    Verify -->|Success| Clean[Clean Ephemeral Material]
-    Verify -->|Fail| Recov[Recover & Inspect]
-  `,
-  'trust-map': `
-flowchart LR
-    Op([Human Operator]) -->|Configures| UTG[UTG Gateway]
-    Op -.->|Approves| UTG
-    UTG -->|Settles| Rails[EVM Rails]
+    SEARCH(["Agent calls search_and_compare"]) --> PROVIDER{"COMMERCE_SEARCH_PROVIDER set?"}
+    PROVIDER -->|"Not set"| DISABLED["Return: Commerce is beta — provider not configured"]
+
+    PROVIDER -->|"catalog"| CATALOG_CHECK{"COMMERCE_CATALOG_ENDPOINT set?"}
+    CATALOG_CHECK -->|"No"| MISSING_EP["Return: Catalog endpoint missing"]
+    CATALOG_CHECK -->|"Yes"| CATALOG["Forward to external catalog service"]
+    CATALOG --> RESULTS["Return ranked results to operator"]
+
+    PROVIDER -->|"browser"| BROWSER_SEARCH["Browser-assisted merchant review"]
+    BROWSER_SEARCH --> DOMAIN_CHECK{"All URLs in ALLOWED_DOMAINS?"}
+    DOMAIN_CHECK -->|"No"| BLOCKED_DOMAIN["BLOCKED: Domain not whitelisted"]
+    DOMAIN_CHECK -->|"Yes"| RESULTS
+
+    RESULTS -.->|"Operator selects item"| ORDER
+
+    ORDER(["Agent calls request_order"]) --> CHECKOUT["CheckoutSkill.build_handover_summary"]
+    CHECKOUT --> PRICE_CHECK{"SafetyPolicy.validate_price"}
+    PRICE_CHECK -->|"Over limit"| BLOCKED_PRICE["BLOCKED: Safety Sandwich violation"]
+    PRICE_CHECK -->|"OK"| HITL_ORDER["HITLManager creates PENDING record"]
+
+    HITL_ORDER --> HANDOVER(["Agent calls request_human_handover"])
+    HANDOVER --> URL_CHECK{"BROWSER_HANDOVER_URL set?"}
+    URL_CHECK -->|"No"| NO_ADAPTER["Return: Handover adapter not configured"]
+    URL_CHECK -->|"Yes"| GENERATE["Generate handover ticket + live view URL"]
+    GENERATE --> OPERATOR_H(["Operator opens live browser session"])
+    OPERATOR_H --> COMPLETE["Complete checkout manually"]
+    COMPLETE --> AUDIT_H["AuditLogger records handover completion"]
   `
 };
 
@@ -117,7 +328,7 @@ export const docsPages: DocsPage[] = [
           'Telegram, Slack, and other chat surfaces are treated as operator channels layered on top of the gateway',
           'Base and Ethereum are executable rails; Bitcoin and Solana are observer/read-only rails for now',
         ],
-        visual: 'trust-map',
+        visual: 'system-architecture',
       },
       {
         id: 'public-contract',
@@ -150,6 +361,7 @@ export const docsPages: DocsPage[] = [
         title: 'Stable surface',
         body: [
           'The stable surface is the part we expect real users to rely on today: Base and Ethereum transfers, HITL approval enforcement, MCP connectivity, idempotent retries, and dashboard telemetry.',
+          'Stable execution now assumes real keys and real settlement rails. If a required execution key is missing, the gateway fails clearly instead of simulating a successful transfer.',
           'These flows are the ones that should drive your first production integration and your first support playbooks.',
         ],
         bullets: [
@@ -180,6 +392,46 @@ export const docsPages: DocsPage[] = [
     ],
   },
   {
+    slug: 'deployment-guide',
+    label: 'Deployment Guide',
+    group: 'Getting Started',
+    eyebrow: 'Production Readiness',
+    title: 'Hardening your self-hosted gateway for production use',
+    summary: 'Moving from local dev to a secure, persistent operator instance.',
+    hero: 'Deploying UTG requires attention to secret management, persistence, and network boundaries.',
+    sections: [
+      {
+        id: 'docker-deployment',
+        title: 'Process and container options',
+        body: [
+          'The repo does not currently ship a canonical Docker Compose stack. The truthful production path today is a self-hosted Python process under a supervisor, or your own container image if you prefer to package it that way.',
+          'If you need the local WebSocket relay for handover experiments, enable it explicitly with `UTG_ENABLE_RELAY_SERVER=true`. It is not part of the stable default path.',
+        ],
+        code: {
+          label: 'Example process launch',
+          language: 'bash',
+          content:
+            'export GATEWAY_PASSCODE=...\nexport SIWE_NONCE_SECRET=...\nexport UTG_STORAGE_DIR=/srv/utg/storage\nexport UTG_IDENTITY_KEY_PATH=/srv/utg/identity/gateway_ed25519.pem\nexport BASE_PRIVATE_KEY=0x...\nexport ETHEREUM_PRIVATE_KEY=0x...\npython src/gateway/server.py',
+        }
+      },
+      {
+        id: 'hardening',
+        title: 'Hardening boundaries',
+        body: [
+          'Never expose the MCP stdio interface directly to the public internet. It is designed to be called by a local agent or proxied through a secure sidecar.',
+          'Ensure `ALLOWED_DOMAINS` is restricted to only the merchants you trust for commerce automation. Keep runtime storage and gateway identity material outside the git checkout so operator secrets, logs, and exports cannot be committed accidentally.',
+        ],
+        bullets: [
+          'Use a dedicated environment for the gateway',
+          'Rotate GATEWAY_PASSCODE and SIWE_NONCE_SECRET periodically',
+          'Keep UTG_STORAGE_DIR outside the repository',
+          'Use UTG_IDENTITY_KEY_PATH or UTG_IDENTITY_PRIVATE_KEY_PEM for the gateway identity',
+          'Enable Firebase RTDB rules to restrict dashboard access',
+        ]
+      }
+    ]
+  },
+  {
     slug: 'self-hosting',
     label: 'Self-Hosting',
     group: 'Getting Started',
@@ -201,7 +453,7 @@ export const docsPages: DocsPage[] = [
           label: 'Stable gateway env',
           language: 'bash',
           content:
-            'GATEWAY_PASSCODE=...\nBASE_PRIVATE_KEY=0x...\nETHEREUM_PRIVATE_KEY=0x...\nBASE_RPC_URL=https://mainnet.base.org\nETHEREUM_RPC_URL=https://mainnet.gateway.tenderly.co/public\nTREASURY_ADDRESS=0x...\nAIMA_API_KEY=...\nFIREBASE_DATABASE_URL=...\nFIREBASE_PROJECT_ID=...',
+            'GATEWAY_PASSCODE=...\nSIWE_NONCE_SECRET=...\nUTG_STORAGE_DIR=/srv/utg/storage\nUTG_IDENTITY_KEY_PATH=/srv/utg/identity/gateway_ed25519.pem\nBASE_PRIVATE_KEY=0x...\nETHEREUM_PRIVATE_KEY=0x...\nBASE_RPC_URL=https://mainnet.base.org\nETHEREUM_RPC_URL=https://mainnet.gateway.tenderly.co/public\nTREASURY_ADDRESS=0x...\nAIMA_API_KEY=...\nFIREBASE_DATABASE_URL=...\nFIREBASE_PROJECT_ID=...',
         },
       },
       {
@@ -217,6 +469,7 @@ export const docsPages: DocsPage[] = [
           'ALLOWED_DOMAINS',
           'BROWSER_HANDOVER_URL',
           'BROWSERBASE_API_KEY and BROWSERBASE_PROJECT_ID when you use Browserbase',
+          'UTG_ENABLE_RELAY_SERVER, UTG_RELAY_HOST, and UTG_RELAY_PORT when you explicitly enable the local handover relay',
           'MPESA_API_SECRET, MPESA_SHORTCODE, MPESA_CALLBACK_URL',
         ],
         callout: {
@@ -246,14 +499,14 @@ export const docsPages: DocsPage[] = [
           'Those boundaries matter because they let the stable operator path stay simple while beta and experimental adapters remain honest about their prerequisites.',
         ],
         bullets: [
-          'MCP server layer',
-          'Tool and skill registry',
-          'Approval and HITL service',
-          'Execution and idempotency wrapper',
-          'x402 payment challenge contract',
-          'Audit and RTDB publisher',
+          'MCP server layer (packaged stdio entrypoint, with optional local relay only when explicitly enabled)',
+          'Tool and skill registry with deterministic routing',
+          'Approval and HITL service backed by SQLite signature-share records',
+          'Execution and idempotency wrapper with cleanup guards',
+          'x402 payment challenge contract for agentic auth',
+          'Audit and RTDB publisher for live observability',
         ],
-        visual: 'architecture',
+        visual: 'system-architecture',
       },
       {
         id: 'network-model',
@@ -284,7 +537,7 @@ export const docsPages: DocsPage[] = [
           'When a protected transfer is requested, the gateway creates or reuses a pending transaction record. The agent sees that as a pending or halted state, asks the operator for approval, and then calls submit_signature_share.',
           'Once the approval share is recorded, the agent retries the original transfer call. The gateway resumes the same path instead of creating a second settlement request.',
         ],
-        visual: 'request-flow',
+        visual: 'hitl-approval',
         code: {
           label: 'Representative MCP flow',
           language: 'text',
@@ -297,9 +550,9 @@ export const docsPages: DocsPage[] = [
         title: 'Approval rules',
         body: [
           'Approval is always enforced for sensitive actions, and the passcode must be present in the environment. The runtime no longer falls back to a pretend default code in production-like paths.',
-          'This keeps the operator story honest: if the gateway is not configured to accept approval shares, it tells you directly.',
+          'This keeps the operator story honest: if the gateway is not configured to accept approval shares, it tells you directly. The CLI approver and the MCP approval tool both fail closed when the passcode is missing or wrong.',
         ],
-        visual: 'safety-sandwich',
+        visual: 'transaction-lifecycle',
         callout: {
           tone: 'critical',
           title: 'No hidden bypass',
@@ -326,7 +579,7 @@ export const docsPages: DocsPage[] = [
           'Pending approvals originate in the HITL database and execution lifecycle events originate in the signed audit log. A Firebase Admin publisher normalizes those sources into summary, throughput, and transaction trees.',
           'The dashboard subscribes to those nodes directly so overview, portfolio context, and transaction review all reflect the same underlying lifecycle.',
         ],
-        visual: 'analytics-pipeline',
+        visual: 'telemetry-pipeline',
         bullets: [
           'dashboard_live/summary',
           'dashboard_live/throughput_30d',
@@ -345,6 +598,83 @@ export const docsPages: DocsPage[] = [
         ],
       },
     ],
+  },
+  {
+    slug: 'anomaly-detection',
+    label: 'Anomaly Detection',
+    group: 'Protocol',
+    eyebrow: 'ML Safety',
+    title: 'Adaptive security via Isolation Forest anomaly detection',
+    summary: 'How UTG dynamically escalates approval requirements for irregular transactions.',
+    hero: 'Static limits are not enough. UTG uses an IsolationForest model to flag unusual transaction patterns before they hit the settlement rail.',
+    sections: [
+      {
+        id: 'anomaly-model',
+        title: 'Isolation Forest Model',
+        body: [
+          'The `AnomalyDetector` maintains a scikit-learn IsolationForest model trained on previous transaction amounts. It identifies "outliers" that deviate significantly from the operator’s normal behavior.',
+        ],
+        visual: 'safety-sandwich',
+        bullets: [
+          'Real-time scoring of transfer amounts when enough readable preflight history exists',
+          'Automatic escalation to multi-share approval on detected outliers',
+          'Unreadable history is skipped; if the model cannot form a baseline, the gateway falls back to baseline HITL rules'
+        ]
+      },
+      {
+        id: 'escalation-logic',
+        title: 'Security Escalation',
+        body: [
+          'When an anomaly is detected, the `HITLManager` elevates the requirement from a single share to a multi-party consensus. This requires an additional `Security_Admin_Share` before the transaction is marked as `FULLY_SIGNED`.',
+        ],
+        visual: 'hitl-approval'
+      }
+    ]
+  },
+  {
+    slug: 'audit-compliance',
+    label: 'Audit & Compliance',
+    group: 'Protocol',
+    eyebrow: 'Audit Vault',
+    title: 'Cryptographic audit logs and GDPR-compliant crypto-shredding',
+    summary: 'Maintaining a tamper-proof chain of custody for all agentic actions.',
+    hero: 'Every action is signed, logged, and encrypted. UTG ensures compliance without sacrificing performance or privacy.',
+    sections: [
+      {
+        id: 'signed-vault',
+        title: 'Signed Audit Vault',
+        body: [
+          'The `AuditLogger` creates signed statements for every lifecycle event. These are stored in an append-only SQLite database and can be exported as a verifiable audit trail.',
+          'Sensitive payload fields are encrypted at rest, and consumers such as the anomaly detector and Firebase publisher use a shared decode path so they can read what they are allowed to read without duplicating decryption logic.',
+        ],
+        bullets: [
+          'Deterministic event IDs',
+          'Operator identity attribution',
+          'Cryptographic proof of approval',
+          'Shared decode path for encrypted audit payload consumers',
+        ]
+      },
+      {
+        id: 'crypto-shredding',
+        title: 'GDPR & Crypto-Shredding',
+        body: [
+          'To support "Right to Erasure" (GDPR), UTG uses a per-user symmetric key for sensitive log entries. Deleting the user’s key effectively "shreds" the audit trail for that user while maintaining the integrity of the overall system logs.',
+        ],
+        callout: {
+          tone: 'note',
+          title: 'Privacy by Design',
+          body: 'Data is encrypted at rest using uniquely generated keys that the operator controls.'
+        }
+      },
+      {
+        id: 'key-rotation',
+        title: 'Key rotation and storage hygiene',
+        body: [
+          'Gateway identity keys and runtime databases should not live inside the repository. Production setups should set UTG_STORAGE_DIR to an external location and either UTG_IDENTITY_KEY_PATH or UTG_IDENTITY_PRIVATE_KEY_PEM for the signing identity.',
+          'If a key or PAT is exposed, the right response is rotation plus history cleanup, not a quiet follow-up commit.',
+        ],
+      }
+    ]
   },
   {
     slug: 'agent-integration',
@@ -410,7 +740,7 @@ export const docsPages: DocsPage[] = [
           'OpenClaw should call request_eth_transfer_reliable, inspect the gateway response, and pause cleanly if approval is required. Once the operator supplies the passcode, OpenClaw calls submit_signature_share and then retries the original transfer request.',
           'This pattern is intentionally simple because it is the safest way to make sure retries remain idempotent and approval never turns into a duplicate settlement.',
         ],
-        visual: 'request-flow',
+        visual: 'transaction-lifecycle',
       },
       {
         id: 'operator-channel',
@@ -516,6 +846,7 @@ export const docsPages: DocsPage[] = [
           'search_and_compare expects a configured commerce provider pattern such as an external catalog endpoint or a browser-assisted search process. If the provider is not configured, the tool returns a clear explanation instead of synthetic marketplace results.',
           'request_order then uses the checkout helper to decide whether browser handover can continue or whether the operator still needs to wire a handover adapter.',
         ],
+        visual: 'commerce-handover',
         bullets: [
           'COMMERCE_SEARCH_PROVIDER',
           'COMMERCE_CATALOG_ENDPOINT for catalog mode',
@@ -588,7 +919,16 @@ export const docsPages: DocsPage[] = [
           'The execution wrapper and idempotency manager are what keep retries from turning into duplicate settlement. The same request can be resumed and audited without multiplying risk.',
           'This is why the docs keep pushing agents to retry the original tool call after approval rather than inventing a new request shape.',
         ],
-        visual: 'rollback-flow',
+        visual: 'transaction-lifecycle',
+      },
+      {
+        id: 'threat-model',
+        title: 'Threat model and trust boundaries',
+        body: [
+          'The primary threats in this release are approval bypass, secret exposure, replayed wallet-signing nonces, domain drift in browser-assisted flows, and runtime data being committed back into source control.',
+          'The current hardening pass addresses those by requiring explicit secrets, one-time SIWE nonces, external runtime storage, and GitHub checks that catch drift between the public docs and the runtime contract.',
+        ],
+        visual: 'safety-sandwich',
       },
       {
         id: 'audit-posture',
@@ -603,6 +943,14 @@ export const docsPages: DocsPage[] = [
           'transaction payload context',
           'onchain receipt references',
           'offchain operator notes and docs links',
+        ],
+      },
+      {
+        id: 'github-guardrails',
+        title: 'GitHub guardrails',
+        body: [
+          'The repository now expects GitHub-native guardrails around the financial runtime: CodeQL, secret scanning, dependency audits, SBOM generation, and a contract assertion that checks README, docs, skill.md, and runtime against each other.',
+          'That policy matters because a repo can be technically open source and still unsafe if the public contract drifts or a secret lands in git without anyone noticing.',
         ],
       },
     ],

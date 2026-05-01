@@ -5,12 +5,16 @@ export default async function handler(req, res) {
 
   const { token, action } = req.body;
   
-  const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID || process.env.VITE_FIREBASE_PROJECT_ID;
-  const apiKey = process.env.RECAPTCHA_API_KEY || process.env.VITE_FIREBASE_API_KEY;
-  const siteKey = process.env.RECAPTCHA_SITE_KEY || process.env.VITE_RECAPTCHA_SITE_KEY || '6LeDEsgsAAAAAHglydox2_TQEPUDR0k6ZFm8ILUy';
+  const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+  const apiKey = process.env.RECAPTCHA_API_KEY;
+  const siteKey = process.env.RECAPTCHA_SITE_KEY;
 
-  if (!token || !projectId || !apiKey) {
-    return res.status(400).json({ error: 'Missing required parameters or environment variables.' });
+  if (!token || !action) {
+    return res.status(400).json({ error: 'Missing token or action.' });
+  }
+
+  if (!projectId || !apiKey || !siteKey) {
+    return res.status(503).json({ error: 'reCAPTCHA Enterprise is not fully configured on the server.' });
   }
 
   // Google Cloud reCAPTCHA Enterprise REST API endpoint
@@ -24,7 +28,7 @@ export default async function handler(req, res) {
         event: {
           token: token,
           siteKey: siteKey,
-          expectedAction: action
+          expectedAction: action,
         }
       })
     });
@@ -39,11 +43,16 @@ export default async function handler(req, res) {
     if (data.tokenProperties && data.tokenProperties.valid) {
       // Score is between 0.0 and 1.0 (1.0 is very likely a good interaction)
       const score = data.riskAnalysis ? data.riskAnalysis.score : 0;
+      const actionMatches = data.tokenProperties.action === action;
       
-      if (score >= 0.5) {
+      if (actionMatches && score >= 0.5) {
         return res.status(200).json({ success: true, score, data });
       } else {
-        return res.status(403).json({ success: false, error: 'reCAPTCHA score too low.', score });
+        return res.status(403).json({
+          success: false,
+          error: actionMatches ? 'reCAPTCHA score too low.' : 'reCAPTCHA action mismatch.',
+          score,
+        });
       }
     } else {
       const reason = data.tokenProperties ? data.tokenProperties.invalidReason : 'Unknown error';

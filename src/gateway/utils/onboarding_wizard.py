@@ -3,6 +3,7 @@ import sys
 import uuid
 import getpass
 import json
+import secrets
 
 def clear_screen():
     os.system('cls' if os.name == 'nt' else 'clear')
@@ -50,15 +51,17 @@ def main():
             acct, _ = Account.create_with_mnemonic()
             eth_key = acct.key.hex()
             print(f"✅ Generated secure Burner Wallet: {acct.address}")
-        except Exception:
-            eth_key = "0x0000000000000000000000000000000000000000000000000000000000000000"
-            print("✅ Using mock wallet for offline testing.")
+        except Exception as error:
+            print(f"❌ Failed to auto-generate a secure wallet: {error}")
+            print("   Install eth-account support or provide an explicit Base/EVM private key.")
+            sys.exit(1)
     else:
         print("✅ Custom wallet linked.")
 
     # 4. API Key Generation
     print("\n[4/5] API CONNECTIVITY")
     from core.api_key_manager import ApiKeyManager
+    from core.secure_paths import DEFAULT_IDENTITY_KEY_PATH, DEFAULT_STORAGE_DIR
     akm = ApiKeyManager()
     api_key = akm.generate_key("UTG-Operator-Default")
     print(f"✅ Generated Aima API Key: {api_key}")
@@ -66,9 +69,15 @@ def main():
 
     # 5. Generate .env
     print("\n[5/5] WRITING CONFIGURATION")
+    storage_dir = str(DEFAULT_STORAGE_DIR)
+    identity_key_path = str(DEFAULT_IDENTITY_KEY_PATH)
+    siwe_nonce_secret = secrets.token_urlsafe(48)
     env_content = f"""# Aima UTG Configuration
 # LEGAL: US E-SIGN ACT ACCEPTED
 GATEWAY_PASSCODE={passcode}
+SIWE_NONCE_SECRET={siwe_nonce_secret}
+UTG_STORAGE_DIR={storage_dir}
+UTG_IDENTITY_KEY_PATH={identity_key_path}
 BASE_PRIVATE_KEY={eth_key}
 ETHEREUM_PRIVATE_KEY={eth_key}
 BASE_RPC_URL=https://mainnet.base.org
@@ -78,7 +87,9 @@ AIMA_API_KEY={api_key}
 """
     with open(".env", "w") as f:
         f.write(env_content)
-    print("✅ Configuration saved securely to your local Vault (.env)")
+    print("✅ Configuration saved to .env")
+    print(f"   Runtime storage will default to: {storage_dir}")
+    print(f"   Gateway identity key path will default to: {identity_key_path}")
 
     # 6. OpenClaw Auto-Config
     print("\n[EXTRA] OPENCLAW AUTO-CONNECTION")
@@ -109,8 +120,10 @@ AIMA_API_KEY={api_key}
     print("\n" + "="*42)
     print("🎉 ONBOARDING COMPLETE!")
     print("   1. Start the server: python src/gateway/server.py")
-    print("   2. Connect OpenClaw, Claude Desktop, or your custom MCP client.")
-    print("   3. Use Telegram or another chat channel only as the operator surface on top of the gateway.")
+    print("   2. Confirm that UTG_STORAGE_DIR is outside the git repository before production use.")
+    print("   3. Run the setup validator to confirm the stable security profile.")
+    print("   4. Connect OpenClaw, Claude Desktop, or your custom MCP client.")
+    print("   5. Use Telegram or another chat channel only as the operator surface on top of the gateway.")
     print("==========================================")
 
 if __name__ == "__main__":
