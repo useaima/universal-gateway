@@ -52,13 +52,13 @@ jobs:
       - name: Install Python test dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytest pytest-asyncio firebase-admin python-dotenv pygments fpdf2 cryptography mcp
+          pip install pytest pytest-asyncio firebase-admin python-dotenv pygments fpdf2 cryptography mcp scikit-learn numpy web3 google-cloud-recaptcha-enterprise price-parser websockets
 
       - name: Compile gateway modules
         run: python -m compileall src/gateway
 
       - name: Run targeted smoke tests
-        run: pytest tests/test_idempotency_locking.py tests/test_ephemeral_purge.py tests/test_final_look_slippage.py tests/test_gateway_public_contract.py
+        run: pytest tests/test_idempotency_locking.py tests/test_ephemeral_purge.py tests/test_final_look_slippage.py tests/test_gateway_public_contract.py tests/test_hitl_regressions.py tests/test_security_hardening.py
 
   functions-build:
     name: Firebase Functions Build

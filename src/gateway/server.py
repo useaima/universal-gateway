@@ -9,6 +9,8 @@ import mcp.types as types
 
 from core.a2a_adapter import A2AAdapter
 from core.browser_manager import BrowserManager
+from core.relay_server import start_relay_server
+from core.secure_paths import secure_runtime_warnings
 from core.tool_registry import ToolRegistry
 
 class UniversalGatewayServer:
@@ -63,21 +65,35 @@ class UniversalGatewayServer:
         self.registry.register(HandoverSkill())
 
     async def run(self):
-        async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-            await self.server.run(
-                read_stream,
-                write_stream,
-                InitializationOptions(
-                    server_name="universal-gateway",
-                    server_version="1.0.0",
-                    capabilities=self.server.get_capabilities(
-                        notification_options=NotificationOptions(),
-                        experimental_capabilities={},
+        relay_task = None
+        if os.environ.get("UTG_ENABLE_RELAY_SERVER", "").strip().lower() in {"1", "true", "yes"}:
+            relay_host = os.environ.get("UTG_RELAY_HOST", "127.0.0.1")
+            relay_port = int(os.environ.get("UTG_RELAY_PORT", "8080"))
+            relay_task = asyncio.create_task(start_relay_server(host=relay_host, port=relay_port))
+
+        try:
+            async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+                await self.server.run(
+                    read_stream,
+                    write_stream,
+                    InitializationOptions(
+                        server_name="universal-gateway",
+                        server_version="1.0.0",
+                        capabilities=self.server.get_capabilities(
+                            notification_options=NotificationOptions(),
+                            experimental_capabilities={},
+                        ),
                     ),
-                ),
-            )
+                )
+        finally:
+            if relay_task:
+                relay_task.cancel()
+                await asyncio.gather(relay_task, return_exceptions=True)
 
 def main():
+    for warning in secure_runtime_warnings():
+        print(f"[Security] {warning}", file=sys.stderr)
+
     server = UniversalGatewayServer()
     server.load_skills()
     asyncio.run(server.run())

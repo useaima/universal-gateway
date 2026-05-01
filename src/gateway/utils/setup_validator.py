@@ -1,6 +1,7 @@
 import sys
 
 from core.runtime_contract import FEATURE_REQUIREMENTS, missing_env
+from core.secure_paths import secure_runtime_warnings
 
 
 def _feature_status(feature_name: str) -> tuple[bool, list[str]]:
@@ -16,10 +17,11 @@ def validate_environment():
     commerce_ready, commerce_missing = _feature_status("commerce_search")
     handover_ready, handover_missing = _feature_status("browser_handover")
     mpesa_ready, mpesa_missing = _feature_status("mpesa_experimental")
+    security_warnings = secure_runtime_warnings()
 
     print("\n--- Universal Gateway Setup Validator ---", file=sys.stderr)
 
-    stable_ready = stable_gateway_ready and evm_ready
+    stable_ready = stable_gateway_ready and evm_ready and not security_warnings
     print(
         f"Stable surface ({'READY' if stable_ready else 'INCOMPLETE'}): "
         "Base/Ethereum transfers, HITL, MCP integration, dashboard telemetry",
@@ -29,6 +31,8 @@ def validate_environment():
         print(f"  Missing stable gateway vars: {', '.join(stable_gateway_missing)}", file=sys.stderr)
     if not evm_ready:
         print(f"  Missing EVM execution vars: {', '.join(evm_missing)}", file=sys.stderr)
+    for warning in security_warnings:
+        print(f"  Security warning: {warning}", file=sys.stderr)
 
     beta_ready = commerce_ready and handover_ready
     print(

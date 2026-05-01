@@ -3,8 +3,9 @@ import uuid
 import os
 import json
 import sys
-from typing import List
+from typing import List, Optional
 from core.firebase_live_publisher import get_live_publisher
+from core.secure_paths import resolve_transactions_db_path
 
 class HITLManager:
     """
@@ -14,8 +15,7 @@ class HITLManager:
     """
     def __init__(self, db_path=None):
         if not db_path:
-            storage_dir = os.environ.get("UTG_STORAGE_DIR", "artifacts/logs")
-            db_path = os.path.join(storage_dir, "transactions.db")
+            db_path = str(resolve_transactions_db_path())
             
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self.db_path = db_path
@@ -58,20 +58,31 @@ class HITLManager:
             ''')
             conn.commit()
 
-    def request_signature(self, url: str, amount: float, details: str, required_signatures: List[str] = None) -> str:
+    def request_signature(
+        self,
+        url: str,
+        amount: float,
+        details: str,
+        required_signatures: List[str] = None,
+        transaction_id: Optional[str] = None,
+    ) -> str:
         from core.anomaly_detector import AnomalyDetector
-        ad = AnomalyDetector() # The detector uses the main audit db
+        ad = AnomalyDetector()  # The detector uses the main audit db
         is_anomaly = ad.evaluate_transaction(amount)
 
-        transaction_id = str(uuid.uuid4())[:8]
+        transaction_id = transaction_id or str(uuid.uuid4())[:8]
         if not required_signatures:
-            required_signatures = ["Alvins_Share"] # Default to the owner's share
-            
+            required_signatures = ["Alvins_Share"]  # Default to the owner's share
+
         if is_anomaly and "Security_Admin_Share" not in required_signatures:
             print("[HITL] Anomaly detected! Elevating signature requirements to include Security_Admin_Share.", file=sys.stderr)
             required_signatures.append("Security_Admin_Share")
-        
+
         with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM pending_transactions WHERE id = ?", (transaction_id,))
+            if cursor.fetchone():
+                return transaction_id
             conn.execute(
                 "INSERT INTO pending_transactions (id, url, item_details, amount, status, required_signatures) VALUES (?, ?, ?, ?, ?, ?)",
                 (transaction_id, url, details, amount, "PENDING_SIGNATURES", json.dumps(required_signatures))

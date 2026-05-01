@@ -14,6 +14,18 @@ artifacts/logs/*.db
 artifacts/logs/*.jsonl
 artifacts/logs/*.pdf
 artifacts/logs/*.json
+src/gateway/artifacts/*
+!src/gateway/artifacts/README.md
+src/gateway/artifacts/**/*.db
+src/gateway/artifacts/**/*.jsonl
+src/gateway/artifacts/**/*.pdf
+src/gateway/artifacts/**/*.json
+src/gateway/artifacts/**/*.key
+src/gateway/artifacts/**/*.pem
+.utg/
+exports/
+*.sqlite
+*.sqlite3
 
 # Playwright/Camoufox
 .camoufox/

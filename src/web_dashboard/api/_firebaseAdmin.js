@@ -6,8 +6,7 @@ const normalizePrivateKey = (value) => value?.replace(/\\n/g, '\n');
 
 const getProjectId = () =>
   process.env.FIREBASE_PROJECT_ID ||
-  process.env.GOOGLE_CLOUD_PROJECT_ID ||
-  process.env.VITE_FIREBASE_PROJECT_ID;
+  process.env.GOOGLE_CLOUD_PROJECT_ID;
 
 export const getFirebaseAdmin = () => {
   const projectId = getProjectId();

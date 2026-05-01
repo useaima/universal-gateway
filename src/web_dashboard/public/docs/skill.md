@@ -18,6 +18,7 @@ UTG is a mediated execution partner, not a secret store. You do not receive wall
 - Stable execution rails: `base`, `ethereum`
 - Observer/read-only rails: `bitcoin`, `solana`
 - Operator channels: OpenClaw TUI, Claude Desktop, Telegram, Slack, or any custom chat surface layered on top of the gateway
+- Security baseline: explicit `GATEWAY_PASSCODE`, `SIWE_NONCE_SECRET`, externalized `UTG_STORAGE_DIR`, and explicit gateway identity material
 
 ## MCP Server Entry
 
@@ -65,6 +66,7 @@ UTG is a mediated execution partner, not a secret store. You do not receive wall
   2. ask the operator for their gateway approval code
   3. call `submit_signature_share`
   4. retry the original transfer request so the gateway can resume safely
+  5. do not describe token swaps as supported through this tool; the current public gateway contract does not expose a real swap capability
 
 ### `submit_signature_share`
 - Tier: `stable`

@@ -1,7 +1,8 @@
 import sqlite3
 import json
-import os
 import time
+
+from core.secure_paths import resolve_idempotency_db_path
 
 class IdempotencyManager:
     """
@@ -10,11 +11,9 @@ class IdempotencyManager:
     """
     def __init__(self, db_path=None):
         if not db_path:
-            storage_dir = os.environ.get("UTG_STORAGE_DIR", "artifacts/logs")
-            db_path = os.path.join(storage_dir, "idempotency.db")
+            db_path = str(resolve_idempotency_db_path())
             
         self.db_path = db_path
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
         self._init_db()
 
     def _init_db(self):

@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import sys
+from core.secure_paths import resolve_transactions_db_path
 
 class SecurityCleaner:
     """
@@ -8,7 +9,7 @@ class SecurityCleaner:
     after task completion to ensure no residue is left for malicious actors.
     """
     def __init__(self, db_path=None):
-        self.db_path = db_path or os.environ.get("UTG_TRANSACTION_DB", "artifacts/logs/transactions.db")
+        self.db_path = db_path or str(resolve_transactions_db_path())
 
     def wipe_transaction_data(self, transaction_id: str):
         """Removes all traces of a transaction's signature shares and sensitive metadata."""

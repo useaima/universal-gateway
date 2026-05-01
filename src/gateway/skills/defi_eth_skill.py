@@ -1,5 +1,4 @@
 import os
-import asyncio
 import sys
 from typing import List, Dict
 import mcp.types as types
@@ -89,32 +88,27 @@ class DeFiEthSkill(SkillBase):
             row = cursor.fetchone()
             
             if not row:
-                # CREATING NEW HITL REQUEST
-                conn.execute(
-                    "INSERT INTO pending_transactions (id, url, item_details, amount, status, required_signatures) VALUES (?, ?, ?, ?, ?, ?)",
-                    (
-                        sig_hash,
-                        network,
-                        f"Transfer to {to_addr}",
-                        amount,
-                        "PENDING_SIGNATURES",
-                        '["Alvins_Share"]',
-                    )
+                self.hitl.request_signature(
+                    url=network,
+                    amount=amount,
+                    details=f"Transfer to {to_addr}",
+                    transaction_id=sig_hash,
                 )
-                conn.commit()
                 return [types.TextContent(type="text", text=f"⚠️ TRANSACTION HALTED (Safety Sandwich enforced).\nThis {network.title()} transaction requires manual authorization.\nPlease ask the User on your chat channel to provide their 6-digit Gateway Passcode. Once they reply, call the 'submit_signature_share' tool with transaction_id: '{sig_hash}'.")]
             
             txn_id, current_status = row
             
         status = self.hitl.get_status(txn_id)
         
-        if status == "PENDING_SIGNATURES":
+        if status.startswith("PENDING_SIGNATURES"):
             return [
                 types.TextContent(
                     type="text",
                     text=(
-                        f"⚠️ Transaction {txn_id} is still pending approval. Ask the operator for their gateway "
-                        "passcode, then call 'submit_signature_share' before retrying this transfer."
+                        f"⚠️ Transaction {txn_id} is still pending approval.\n"
+                        f"Current status: {status}\n"
+                        "Ask the operator for the required gateway approval share(s), then call "
+                        "'submit_signature_share' before retrying this transfer."
                     ),
                 )
             ]
@@ -130,50 +124,44 @@ class DeFiEthSkill(SkillBase):
             pk = os.environ.get(
                 "BASE_PRIVATE_KEY" if network == "base" else "ETHEREUM_PRIVATE_KEY", ""
             )
-            if pk and pk != "0x0000000000000000000000000000000000000000000000000000000000000000":
-                from eth_account import Account
-                print(f"[Web3] Connecting to {network.title()} node...", file=sys.stderr)
-                account_obj = Account.from_key(pk)
-                sender_addr = account_obj.address
-                
-                nonce = await w3.eth.get_transaction_count(sender_addr)
-                chain_id = await w3.eth.chain_id
-                
-                tx = {
-                    "nonce": nonce,
-                    "to": to_addr,
-                    "value": w3.to_wei(amount, "ether"),
-                    "gas": 21000,
-                    "maxFeePerGas": w3.to_wei(20, "gwei"),
-                    "maxPriorityFeePerGas": w3.to_wei(2, "gwei"),
-                    "chainId": chain_id
-                }
-                
-                print(f"[Web3] Signing payload for ChainID {chain_id}...", file=sys.stderr)
-                signed_tx = w3.eth.account.sign_transaction(tx, pk)
-                
-                print(f"[Web3] Broadcasting transaction...", file=sys.stderr)
-                tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
-                final_hash_hex = tx_hash.to_0x_hex()
-                print(f"[Web3] TX Hash: {final_hash_hex}. Waiting for block inclusion...", file=sys.stderr)
-                
-                # Provide real confirmation
-                try:
-                    await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
-                    conf_needed = 2 if network == "base" else 6
-                except Exception as e:
-                    print(f"[Web3Guard] Warning during receipt polling: {e}", file=sys.stderr)
-                    conf_needed = "Unknown"
-            else:
-                print(
-                    f"[Web3 Mock] Simulating {amount} ETH transfer on {network.title()} because no live Private Key is connected.",
-                    file=sys.stderr,
+            if not pk or pk == "0x0000000000000000000000000000000000000000000000000000000000000000":
+                raise RuntimeError(
+                    f"{network.title()} execution is not configured. Set the live private key for this rail before requesting settlement."
                 )
-                final_hash_hex = f"0xMOCK_{sig_hash}"
+
+            from eth_account import Account
+            print(f"[Web3] Connecting to {network.title()} node...", file=sys.stderr)
+            account_obj = Account.from_key(pk)
+            sender_addr = account_obj.address
+            
+            nonce = await w3.eth.get_transaction_count(sender_addr)
+            chain_id = await w3.eth.chain_id
+            
+            tx = {
+                "nonce": nonce,
+                "to": to_addr,
+                "value": w3.to_wei(amount, "ether"),
+                "gas": 21000,
+                "maxFeePerGas": w3.to_wei(20, "gwei"),
+                "maxPriorityFeePerGas": w3.to_wei(2, "gwei"),
+                "chainId": chain_id
+            }
+            
+            print(f"[Web3] Signing payload for ChainID {chain_id}...", file=sys.stderr)
+            signed_tx = w3.eth.account.sign_transaction(tx, pk)
+            
+            print(f"[Web3] Broadcasting transaction...", file=sys.stderr)
+            tx_hash = await w3.eth.send_raw_transaction(signed_tx.raw_transaction)
+            final_hash_hex = tx_hash.to_0x_hex()
+            print(f"[Web3] TX Hash: {final_hash_hex}. Waiting for block inclusion...", file=sys.stderr)
+            
+            # Provide real confirmation
+            try:
+                await w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
                 conf_needed = 2 if network == "base" else 6
-                print(f"[Web3Guard] Waiting for {conf_needed} block confirmations...", file=sys.stderr)
-                for i in range(1, conf_needed + 1):
-                    await asyncio.sleep(0.3)
+            except Exception as e:
+                print(f"[Web3Guard] Warning during receipt polling: {e}", file=sys.stderr)
+                conf_needed = "Unknown"
             
             # Finalize Statement
             self.audit_logger.log_signed_entry(user_id, "ETH_TRANSFER", {
