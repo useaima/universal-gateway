@@ -6,6 +6,11 @@ import pytest
 
 pytest.importorskip("sklearn")
 
+try:
+    import core.anomaly_detector as runtime_anomaly_detector
+except ModuleNotFoundError:  # pragma: no cover - package import layout differs between envs
+    runtime_anomaly_detector = None
+
 from src.gateway.core.anomaly_detector import AnomalyDetector
 from src.gateway.core.audit_logger import AuditLogger
 from src.gateway.skills.defi_eth_skill import DeFiEthSkill
@@ -81,6 +86,12 @@ async def test_transfer_creation_uses_anomaly_escalation_when_detector_flags_out
         "evaluate_transaction",
         lambda self, amount, user_id="system": True,
     )
+    if runtime_anomaly_detector is not None:
+        monkeypatch.setattr(
+            runtime_anomaly_detector.AnomalyDetector,
+            "evaluate_transaction",
+            lambda self, amount, user_id="system": True,
+        )
 
     skill = DeFiEthSkill()
     args = {
