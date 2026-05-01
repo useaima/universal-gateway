@@ -2,8 +2,16 @@ import os
 import sys
 import asyncio
 import random
-from playwright.async_api import async_playwright
-from browserbase import Browserbase
+
+try:
+    from playwright.async_api import async_playwright
+except ImportError:  # pragma: no cover - optional runtime dependency
+    async_playwright = None
+
+try:
+    from browserbase import Browserbase
+except ImportError:  # pragma: no cover - optional runtime dependency
+    Browserbase = None
 
 
 async def human_delay(min_s: float = 0.5, max_s: float = 1.5):
@@ -30,10 +38,14 @@ class BrowserManager:
         return cls._instance
 
     async def start(self):
+        if async_playwright is None:
+            raise RuntimeError("playwright is required for browser automation but is not installed.")
         if not self.playwright:
             self.playwright = await async_playwright().start()
             
             if self.mode == "browserbase":
+                if Browserbase is None:
+                    raise RuntimeError("browserbase is required for BROWSER_MODE=browserbase but is not installed.")
                 print("[Browserbase] Initiating cloud session...", file=sys.stderr)
                 bb = Browserbase(api_key=os.environ["BROWSERBASE_API_KEY"])
                 session = bb.sessions.create(
