@@ -60,6 +60,12 @@ def resolve_idempotency_db_path() -> Path:
     return resolve_storage_dir() / "idempotency.db"
 
 
+def resolve_vault_db_path() -> Path:
+    if os.environ.get("UTG_VAULT_DB"):
+        return ensure_parent_dir(os.environ["UTG_VAULT_DB"])
+    return resolve_storage_dir() / "vault.db"
+
+
 def resolve_identity_key_path() -> Path:
     explicit = os.environ.get("UTG_IDENTITY_KEY_PATH")
     raw_path = explicit or str(DEFAULT_IDENTITY_KEY_PATH)

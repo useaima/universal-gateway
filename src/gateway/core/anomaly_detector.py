@@ -1,7 +1,15 @@
 import os
 import sqlite3
-import numpy as np
-from sklearn.ensemble import IsolationForest
+
+try:
+    import numpy as np
+except ImportError:  # pragma: no cover - optional hardening dependency
+    np = None
+
+try:
+    from sklearn.ensemble import IsolationForest
+except ImportError:  # pragma: no cover - optional hardening dependency
+    IsolationForest = None
 
 from core.audit_payloads import decode_audit_payload
 from core.secure_paths import resolve_audit_db_path
@@ -13,11 +21,18 @@ class AnomalyDetector:
     """
     def __init__(self, db_path=None):
         self.db_path = db_path or str(resolve_audit_db_path())
-        self.model = IsolationForest(contamination=0.05, random_state=42)
+        self.model = (
+            IsolationForest(contamination=0.05, random_state=42)
+            if IsolationForest is not None and np is not None
+            else None
+        )
         self.is_trained = False
+        self.backend_available = self.model is not None
 
     def train(self):
         """Trains the Isolation Forest model on readable historical transaction data."""
+        if not self.backend_available:
+            return
         if not os.path.exists(self.db_path):
             return  # No data to train on
 
@@ -57,6 +72,9 @@ class AnomalyDetector:
         Evaluates if the current transaction is an anomaly.
         Returns True if it IS an anomaly, False otherwise.
         """
+        if not self.backend_available:
+            return False
+
         if not self.is_trained:
             self.train()
 

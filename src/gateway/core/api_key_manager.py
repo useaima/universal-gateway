@@ -3,13 +3,15 @@ import hashlib
 import sqlite3
 import os
 from datetime import datetime
+from core.secure_paths import resolve_vault_db_path
 
 class ApiKeyManager:
     """
     Manages API Keys for secure MCP server access and tracking.
     Stored in the local vault (SQLite).
     """
-    def __init__(self, db_path="artifacts/logs/vault.db"):
+    def __init__(self, db_path=None):
+        db_path = db_path or str(resolve_vault_db_path())
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
         self.db_path = db_path
         self._init_db()

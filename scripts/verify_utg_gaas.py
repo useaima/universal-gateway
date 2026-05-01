@@ -9,6 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), "..", "src", "gateway"))
 from core.identity_manager import IdentityManager
 from core.execution_wrapper import ExecutionWrapper
 from core.audit_logger import AuditLogger
+from core.secure_paths import resolve_identity_key_path, resolve_storage_dir
 
 async def run_master_verification():
     print("--- UTG GaaS: MASTER PRODUCTION VERIFICATION ---")
@@ -53,10 +54,13 @@ async def run_master_verification():
     # 4. Binaries & Stealth Check
     print("\n[4/4] Checking Browser Stealth Binaries...")
     # Checking for camoufox fetch results (standard path)
-    if os.path.exists("artifacts/gateway_v3.key"):
-        print("✅ Environment: Key Scaffolding OK.")
+    identity_path = resolve_identity_key_path()
+    storage_dir = resolve_storage_dir()
+    if identity_path.exists():
+        print(f"✅ Environment: Identity material resolved at {identity_path}")
     else:
-        print("⚠️ Environment Warning: Key path differs. Proceed with caution.")
+        print("⚠️ Environment Warning: Identity material is not provisioned yet.")
+    print(f"ℹ️ Runtime storage directory: {storage_dir}")
 
     print("\n--- MASTER VERIFICATION COMPLETE ---")
     print("UTG GaaS is now PRODUCTION READY.")

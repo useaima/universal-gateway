@@ -118,7 +118,7 @@ class CheckoutSkill:
             if os.environ.get("MOCK_SOLVE", "False").lower() == "true":
                 print(">>> MOCK_SOLVE ENABLED: Simulating successful hCaptcha solve...")
                 await asyncio.sleep(2) # Simulate brief worker delay
-                token = "P0_eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJyZXNwb25zZSI6IlN1Y2Nlc3MiLCJzZXNzaW9uX2lkIjoiTU9DS19TRVNTSU9OIn0"
+                token = "mock-hcaptcha-solve-token"
             else:
                 # Run synchronous capsolver network request in a thread pool
                 try:

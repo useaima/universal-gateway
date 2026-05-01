@@ -9,6 +9,9 @@ dist/
 
 # GaaS Specific
 .env
+artifacts/*.key
+artifacts/*.key.pub
+artifacts/*.pem
 artifacts/gateway_v*.key
 artifacts/logs/*.db
 artifacts/logs/*.jsonl
