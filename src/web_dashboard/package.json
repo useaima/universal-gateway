@@ -18,7 +18,7 @@
     "lucide-react": "^1.9.0",
     "mermaid": "^11.14.0",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react-dom": "^19.2.6",
     "react-router-dom": "^7.14.2",
     "recharts": "^3.8.1",
     "viem": "^2.48.4",
